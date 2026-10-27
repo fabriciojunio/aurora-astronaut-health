@@ -11,6 +11,16 @@ export const VITAL_KINDS = [
 ] as const
 export type VitalKind = (typeof VITAL_KINDS)[number]
 
+export const VITAL_NAMES: Record<VitalKind, string> = {
+  heartRate: 'Heart rate',
+  hrv: 'HRV',
+  spo2: 'SpO2',
+  systolic: 'Systolic BP',
+  diastolic: 'Diastolic BP',
+  temperature: 'Temperature',
+  respiratoryRate: 'Respiratory rate',
+}
+
 export const UNITS: Record<VitalKind, string> = {
   heartRate: 'bpm',
   hrv: 'ms',

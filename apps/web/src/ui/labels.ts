@@ -1,16 +1,8 @@
 import type { Symptom } from '../domain/checkin'
 import type { Severity } from '../domain/riskEngine'
-import type { VitalKind } from '../domain/vitals'
+import { VITAL_NAMES, type VitalKind } from '../domain/vitals'
 
-export const VITAL_LABEL: Record<VitalKind, string> = {
-  heartRate: 'Heart rate',
-  hrv: 'HRV',
-  spo2: 'SpO2',
-  systolic: 'Systolic BP',
-  diastolic: 'Diastolic BP',
-  temperature: 'Temperature',
-  respiratoryRate: 'Respiratory rate',
-}
+export const VITAL_LABEL = VITAL_NAMES
 
 export const SEVERITY_LABEL: Record<Severity, string> = {
   info: 'Info',

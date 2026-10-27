@@ -2,7 +2,7 @@ import fc from 'fast-check'
 import type { CheckIn } from './checkin'
 import { scorePvt } from './cognition'
 import { EVIDENCE } from './evidence'
-import { evaluate, severityRank, type RiskContext } from './riskEngine'
+import { evaluate, severityRank, utcTime, type RiskContext } from './riskEngine'
 import { VITAL_KINDS, type VitalKind, type VitalReading } from './vitals'
 
 const NOW = new Date('2026-11-14T12:00:00.000Z')
@@ -138,7 +138,14 @@ describe('risk engine, real-use scenarios', () => {
       crewId: 'crew-1', kind: 'heartRate' as const, value: 84 + i, at: hoursAgo(h), source: 'simulated' as const,
     }))
     const alerts = evaluate(context({ vitals: [...vitals().filter((v) => v.kind !== 'heartRate'), ...history, ...recent] }))
-    expect(alerts.find((a) => a.key.endsWith('baseline-heartRate'))).toMatchObject({ severity: 'warning' })
+    const alert = alerts.find((a) => a.key.endsWith('baseline-heartRate'))!
+    expect(alert).toMatchObject({ severity: 'warning', title: 'Heart rate above your personal normal' })
+    expect(alert.why).toMatch(/^3 consecutive readings since \d{1,2} [A-Z][a-z]{2}, \d\d:\d\d UTC away from your median of \d+ bpm\.$/)
+  })
+
+  it('writes times the way a crew reads them', () => {
+    expect(utcTime('2026-11-16T07:00:00.000Z')).toBe('16 Nov, 07:00 UTC')
+    expect(utcTime('2026-01-03T23:59:00.000Z')).toBe('3 Jan, 23:59 UTC')
   })
 
   it('orders alerts from most to least severe', () => {

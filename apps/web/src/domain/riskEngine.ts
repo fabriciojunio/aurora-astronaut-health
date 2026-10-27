@@ -4,7 +4,7 @@ import { vigilanceBelowNormal, type PvtResult } from './cognition'
 import type { EvidenceId } from './evidence'
 import { careerStatus, type RadiationEnvironment } from './radiation'
 import type { Readiness } from './sensorimotor'
-import { RESOLUTION, VITAL_KINDS, latestByKind, news2, type VitalKind, type VitalReading } from './vitals'
+import { RESOLUTION, UNITS, VITAL_KINDS, VITAL_NAMES, latestByKind, news2, type VitalKind, type VitalReading } from './vitals'
 import {
   CO2_TARGET_MMHG,
   HYDRATION_TARGET_ML,
@@ -62,6 +62,16 @@ export function severityRank(severity: Severity): number {
   return SEVERITIES.indexOf(severity)
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/** "16 Nov, 07:00 UTC": mission time is UTC, and crews read times, not ISO strings. */
+export function utcTime(iso: string): string {
+  const d = new Date(iso)
+  const hh = String(d.getUTCHours()).padStart(2, '0')
+  const mm = String(d.getUTCMinutes()).padStart(2, '0')
+  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}, ${hh}:${mm} UTC`
+}
+
 function raise(severity: Severity): Severity {
   return SEVERITIES[Math.min(severityRank(severity) + 1, SEVERITIES.length - 1)]!
 }
@@ -116,8 +126,8 @@ export function evaluate(ctx: RiskContext): Alert[] {
     add(`baseline-${kind}`, {
       area: 'vitals',
       severity: watchOnly.includes(kind) ? 'watch' : 'warning',
-      title: `${kind} ${deviation.direction === 'up' ? 'above' : 'below'} your personal normal`,
-      why: `${deviation.count} consecutive readings since ${deviation.since} away from your median of ${baseline.median}.`,
+      title: `${VITAL_NAMES[kind]} ${deviation.direction === 'up' ? 'above' : 'below'} your personal normal`,
+      why: `${deviation.count} consecutive readings since ${utcTime(deviation.since)} away from your median of ${baseline.median} ${UNITS[kind]}.`,
       action: 'Check how you feel, repeat the measurement at rest and log any symptom.',
       evidence: ['mars500', 'modifiedZ'],
     })
