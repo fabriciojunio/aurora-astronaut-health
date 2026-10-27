@@ -10,7 +10,7 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
-      include: ['src/domain/**', 'src/security/**', 'src/storage/**', 'src/sync/**', 'src/ai/**', 'src/data/**'],
+      include: ['src/domain/**', 'src/security/**', 'src/storage/**', 'src/sync/**', 'src/sim/**', 'src/ai/**', 'src/data/**'],
       exclude: ['**/*.test.*', '**/index.ts'],
       thresholds: { lines: 90, functions: 90, branches: 85, statements: 90 },
     },
