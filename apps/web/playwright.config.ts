@@ -7,7 +7,9 @@ const deployed = process.env.E2E_BASE_URL
 export default defineConfig({
   testDir: './e2e',
   timeout: 60_000,
-  fullyParallel: true,
+  // Each test derives a key with 600,000 PBKDF2 iterations and runs axe; in parallel they fight for
+  // the CPU and time out on smaller machines. The whole suite takes under a minute in sequence.
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: 0,
   reporter: process.env.CI ? [['github'], ['list']] : 'list',
