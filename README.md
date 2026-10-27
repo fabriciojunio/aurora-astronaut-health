@@ -34,7 +34,7 @@ category, and every batch is signed and checked on arrival.
 
 ## Try it
 
-Live demo: *link added at release*. Create any 6 to 12 digit PIN (it stays on your device), then pick
+Live demo: **https://aurora-astronaut-health.vercel.app**. Create any 6 to 12 digit PIN (it stays on your device), then pick
 a scenario. **Fever in the crew medical officer** and **Solar storm on Mars** show the most.
 
 ```bash

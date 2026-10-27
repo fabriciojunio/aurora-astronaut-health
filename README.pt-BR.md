@@ -35,7 +35,7 @@ e cada lote é assinado e conferido na chegada.
 
 ## Como testar
 
-Demonstração online: *link adicionado no lançamento*. Crie qualquer PIN de 6 a 12 dígitos (ele fica
+Demonstração online: **https://aurora-astronaut-health.vercel.app**. Crie qualquer PIN de 6 a 12 dígitos (ele fica
 só no seu dispositivo) e escolha um cenário. **Fever in the crew medical officer** e **Solar storm on
 Mars** são os que mais mostram.
 
