@@ -493,3 +493,156 @@ label {
     animation: none !important;
   }
 }
+
+/* Radiation */
+
+.stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.hero-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 3rem;
+  margin: 1rem 0 0.6rem;
+}
+
+.hero-number {
+  font-family: var(--mono);
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.meter {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--panel-2);
+  overflow: hidden;
+}
+
+.meter span {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+.meter span.high {
+  background: var(--warning);
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 0.8rem;
+}
+
+.chart {
+  margin: 0;
+}
+
+.chart figcaption {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.chart-plot {
+  position: relative;
+}
+
+.chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.chart .grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.chart .axis {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+
+.chart .tick,
+.chart .bar-label {
+  fill: var(--muted);
+  font-size: 9px;
+}
+
+.chart .bar-label {
+  fill: var(--text);
+  font-weight: 600;
+}
+
+.chart .bar {
+  fill: var(--accent);
+}
+
+.chart .bar.active {
+  fill: color-mix(in srgb, var(--accent) 70%, white);
+}
+
+.chart .bar.spike {
+  fill: var(--warning);
+}
+
+.tooltip {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 0.1rem;
+  min-width: 170px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.78rem;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.chart-table {
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
+}
+
+.chart-table summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.chart-table table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.4rem;
+}
+
+.chart-table th,
+.chart-table td {
+  text-align: right;
+  padding: 0.15rem 0.4rem;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+}
+
+.chart-table th:first-child,
+.chart-table td:first-child {
+  text-align: left;
+}
+
+.source-line {
+  margin-top: 0.8rem;
+}
+
+.protons {
+  margin-top: 1rem;
+  border-top: 1px solid var(--line);
+}

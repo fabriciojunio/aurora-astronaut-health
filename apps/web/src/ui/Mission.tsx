@@ -6,6 +6,7 @@ import { CrewView } from './CrewView'
 import { focusDay } from './focusDay'
 import { ENVIRONMENT_LABEL } from './labels'
 import { Brand } from './LockScreen'
+import { RadiationView } from './RadiationView'
 import { useIdleLock } from './useIdleLock'
 import { useVerifiedData } from './useVerifiedData'
 
@@ -15,11 +16,14 @@ interface Props {
   onLock: () => void
 }
 
-const TABS = [{ id: 'crew', label: 'Crew' }] as const
+const TABS = [
+  { id: 'crew', label: 'Crew' },
+  { id: 'radiation', label: 'Radiation' },
+] as const
 type Tab = (typeof TABS)[number]['id']
 
 export function Mission({ fetcher, onLock }: Props) {
-  const { model } = useVerifiedData(fetcher)
+  const { model, data } = useVerifiedData(fetcher)
   const [scenarioId, setScenarioId] = useState(SCENARIOS[0]!.id)
   const scenario = scenarioById(scenarioId)
   const days = useMemo(() => runScenario(scenarioById(scenarioId)), [scenarioId])
@@ -124,6 +128,7 @@ export function Mission({ fetcher, onLock }: Props) {
 
       <main id={`${ids.tabs}-${tab}-panel`} role="tabpanel" aria-labelledby={`${ids.tabs}-${tab}`} className="panel">
         {tab === 'crew' && <CrewView days={days} dayIndex={dayIndex} model={model} />}
+        {tab === 'radiation' && <RadiationView scenario={scenario} days={days} dayIndex={dayIndex} data={data} />}
       </main>
     </div>
   )

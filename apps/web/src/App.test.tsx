@@ -128,4 +128,18 @@ describe('mission view', () => {
     expect(screen.getByLabelText(/Mission day 12 of 21/)).toBeInTheDocument()
     expect(screen.getAllByText('Cabin CO2 at 6 mmHg').length).toBe(3)
   })
+
+  it('moves between views with the arrow keys, as a tab list should', async () => {
+    const { user } = renderApp()
+    await createVault(user)
+    const crewTab = screen.getByRole('tab', { name: 'Crew' })
+    expect(crewTab).toHaveAttribute('aria-selected', 'true')
+    crewTab.focus()
+    await user.keyboard('{ArrowRight}')
+    const radiationTab = screen.getByRole('tab', { name: 'Radiation' })
+    expect(radiationTab).toHaveAttribute('aria-selected', 'true')
+    expect(radiationTab).toHaveFocus()
+    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Radiation')
+    expect(screen.getByRole('heading', { name: 'Career dose in this scenario' })).toBeInTheDocument()
+  })
 })
