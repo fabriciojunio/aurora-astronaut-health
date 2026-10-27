@@ -34,5 +34,17 @@ self.addEventListener('fetch', (event) => {
   }
   // Module scripts are requested with an Origin header and the precache requests are not; servers
   // that answer with `Vary: Origin` would otherwise make every cached file miss when offline.
-  event.respondWith(caches.match(request, { ignoreSearch: true, ignoreVary: true }).then((hit) => hit ?? fetch(request)))
+  event.respondWith(caches.match(request, { ignoreSearch: true, ignoreVary: true }).then((hit) => hit ?? fetchAndKeep(request)))
 })
+
+// A page served during a deploy can come from a newer build than this worker's list. Keeping every
+// same-origin file that loads fine means the files the page really uses are there when offline.
+function fetchAndKeep(request) {
+  return fetch(request).then((response) => {
+    if (response.ok && response.type === 'basic') {
+      const copy = response.clone()
+      caches.open(CACHE).then((cache) => cache.put(request, copy))
+    }
+    return response
+  })
+}
