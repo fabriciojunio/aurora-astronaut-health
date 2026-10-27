@@ -1,8 +1,10 @@
 import { useId, useMemo, useState, type KeyboardEvent } from 'react'
 import type { Fetcher } from '../data/loader'
+import type { Alert } from '../domain/riskEngine'
 import { CREW } from '../sim/crew'
 import { SCENARIOS, runScenario, scenarioById } from '../sim/scenarios'
 import type { Vault } from '../storage/vault'
+import { AssistantView } from './AssistantView'
 import { CheckInView } from './CheckInView'
 import { CrewView } from './CrewView'
 import { focusDay } from './focusDay'
@@ -24,6 +26,7 @@ const TABS = [
   { id: 'radiation', label: 'Radiation' },
   { id: 'checkin', label: 'Check-in' },
   { id: 'pvt', label: 'Vigilance test' },
+  { id: 'assistant', label: 'Assistant' },
 ] as const
 type Tab = (typeof TABS)[number]['id']
 
@@ -35,6 +38,7 @@ export function Mission({ vault, fetcher, onLock }: Props) {
   const [dayIndex, setDayIndex] = useState(() => focusDay(scenario))
   const [tab, setTab] = useState<Tab>('crew')
   const [recorder, setRecorder] = useState(CREW[0]!.id)
+  const [askAbout, setAskAbout] = useState<Alert | null>(null)
   const ids = { scenario: useId(), day: useId(), tabs: useId() }
   const day = days[dayIndex]
 
@@ -43,6 +47,11 @@ export function Mission({ vault, fetcher, onLock }: Props) {
   function chooseScenario(id: string) {
     setScenarioId(id)
     setDayIndex(focusDay(scenarioById(id)))
+  }
+
+  function askAssistant(alert: Alert) {
+    setAskAbout(alert)
+    setTab('assistant')
   }
 
   function onTabKey(event: KeyboardEvent<HTMLDivElement>) {
@@ -133,10 +142,11 @@ export function Mission({ vault, fetcher, onLock }: Props) {
       </div>
 
       <main id={`${ids.tabs}-${tab}-panel`} role="tabpanel" aria-labelledby={`${ids.tabs}-${tab}`} className="panel">
-        {tab === 'crew' && <CrewView days={days} dayIndex={dayIndex} model={model} />}
+        {tab === 'crew' && <CrewView days={days} dayIndex={dayIndex} model={model} onAsk={askAssistant} />}
         {tab === 'radiation' && <RadiationView scenario={scenario} days={days} dayIndex={dayIndex} data={data} />}
         {tab === 'checkin' && <CheckInView vault={vault} crewId={recorder} onCrewChange={setRecorder} />}
         {tab === 'pvt' && <PvtView vault={vault} crewId={recorder} onCrewChange={setRecorder} />}
+        {tab === 'assistant' && <AssistantView alert={askAbout} onClearAlert={() => setAskAbout(null)} />}
       </main>
     </div>
   )

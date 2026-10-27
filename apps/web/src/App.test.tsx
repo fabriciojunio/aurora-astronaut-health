@@ -142,4 +142,20 @@ describe('mission view', () => {
     expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Radiation')
     expect(screen.getByRole('heading', { name: 'Career dose in this scenario' })).toBeInTheDocument()
   })
+
+  it('takes an alert to the assistant and explains it with its source', async () => {
+    const { user } = renderApp()
+    await createVault(user)
+    await chooseScenario(user, 'Fever in the crew medical officer')
+    const okafor = screen.getByRole('article', { name: 'M. Okafor' })
+    const alert = within(okafor).getByText('Possible immune-related symptom').closest('li')!
+    await user.click(within(alert).getByRole('button', { name: 'Ask the assistant about this alert' }))
+
+    expect(screen.getByRole('tab', { name: 'Assistant' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByText('Possible immune-related symptom')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Why did I get this alert?' }))
+    expect(screen.getByText('About this alert')).toBeInTheDocument()
+    expect(screen.getByText(/61% of ISS astronauts shed reactivated herpes viruses/)).toBeInTheDocument()
+    expect(screen.getByText(/^Source: Mehta, Crucian et al/)).toBeInTheDocument()
+  })
 })

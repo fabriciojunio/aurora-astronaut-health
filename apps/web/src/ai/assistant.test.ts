@@ -41,6 +41,7 @@ describe('assistant answers', () => {
     const shelter = answer(index, 'there is a solar storm, where do I go?')
     expect(shelter.kind).toBe('procedure')
     expect(shelter.text).toMatch(/storm shelter/)
+    expect(shelter.procedureId).toBe('solar-storm-shelter')
     const balance = answer(index, 'how do I do the balance tests before landing')
     expect(balance.text).toMatch(/Tandem walk/)
   })

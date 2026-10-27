@@ -749,3 +749,85 @@ input[type='checkbox'] {
   background: var(--panel-2);
   border-radius: 6px;
 }
+
+/* Assistant */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.ask {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.6rem 0;
+}
+
+.suggestions button {
+  font-size: 0.82rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+}
+
+.context {
+  padding: 0.4rem 0.6rem;
+  background: var(--panel-2);
+  border-radius: 6px;
+}
+
+.exchanges {
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.question {
+  font-weight: 600;
+}
+
+.answer {
+  border-left: 3px solid var(--accent);
+  padding: 0.2rem 0 0.2rem 0.8rem;
+}
+
+.answer.refusal,
+.answer.unknown {
+  border-left-color: var(--muted);
+}
+
+.answer .label {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.procedure {
+  border-top: 1px solid var(--line);
+  padding: 0.5rem 0;
+}
+
+.procedure summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.steps {
+  margin: 0.3rem 0;
+  padding-left: 1.3rem;
+}
+
+.steps li {
+  margin: 0.2rem 0;
+}

@@ -22,6 +22,8 @@ export interface Answer {
   kind: 'explanation' | 'procedure' | 'refusal' | 'unknown' | 'evidence'
   text: string
   sources: string[]
+  /** Set when the answer is a procedure, so the UI can show it as numbered steps. */
+  procedureId?: string
 }
 
 const STOP = new Set('a an and are as at be by do does for from how i in is it me my of on or should the this to what when why with you your'.split(' '))
@@ -134,6 +136,7 @@ export function answer(index: Bm25Index, question: string, alert?: Alert): Answe
       kind: 'procedure',
       text: `${procedure.title}. When: ${procedure.when} Steps: ${steps} ${procedure.escalate}`,
       sources: procedure.evidence.map((e) => EVIDENCE[e].citation),
+      procedureId: procedure.id,
     }
   }
   const evidence = Object.values(EVIDENCE).find((e) => `evidence:${e.id}` === best.doc.id)!

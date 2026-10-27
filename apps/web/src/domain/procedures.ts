@@ -49,7 +49,7 @@ export const PROCEDURES: readonly Procedure[] = [
     when: 'Once a day, after short sleep, or before a critical task.',
     steps: [
       'Find a quiet spot and silence notifications.',
-      'Press the button as fast as you can each time the counter appears; do not press early.',
+      'Press the button or the space bar as fast as you can each time it lights up; do not press early.',
       'Complete the full 3 minutes; an interrupted test is not scored.',
     ],
     escalate: 'With 5 or more lapses, postpone critical tasks and repeat the test after rest.',
