@@ -110,10 +110,6 @@ export function PrivacyView({ vault, crewId, onCrewChange, environment, link }: 
       <section className="card" aria-labelledby={`${ids}-consent`}>
         <h2 id={`${ids}-consent`}>Who can see your data</h2>
         <CrewPicker crewId={crewId} onChange={onCrewChange} />
-        <p className="muted small">
-          Everything starts private. Nothing leaves this device unless you allow that category for that person. Each
-          change is written to the signed audit trail.
-        </p>
         {consent && (
           <table className="consent">
             <thead>
@@ -149,10 +145,6 @@ export function PrivacyView({ vault, crewId, onCrewChange, environment, link }: 
 
       <section className="card" aria-labelledby={`${ids}-sync`}>
         <h2 id={`${ids}-sync`}>Send to the ground</h2>
-        <p className="muted small">
-          Batches are signed on this device with ECDSA P-256. The ground checks the signature and ignores duplicates,
-          so a batch that arrives twice or out of order changes nothing.
-        </p>
         <p>
           One-way delay for this mission: <strong>{delayLabel(missionLink, delayMs)}</strong>
         </p>
@@ -220,10 +212,6 @@ export function PrivacyView({ vault, crewId, onCrewChange, environment, link }: 
 
       <section className="card" aria-labelledby={`${ids}-audit`}>
         <h2 id={`${ids}-audit`}>Audit trail</h2>
-        <p className="muted small">
-          Every save, consent change and transmission, chained by SHA-256 and signed. Content is never written here, only
-          that something happened.
-        </p>
         <button type="button" onClick={() => void verify()}>
           Verify the chain
         </button>

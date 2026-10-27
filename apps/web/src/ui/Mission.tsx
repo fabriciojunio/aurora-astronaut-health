@@ -147,7 +147,7 @@ export function Mission({ vault, fetcher, onLock }: Props) {
 
       <main id={`${ids.tabs}-${tab}-panel`} role="tabpanel" aria-labelledby={`${ids.tabs}-${tab}`} className="panel">
         {tab === 'crew' && <CrewView days={days} dayIndex={dayIndex} model={model} onAsk={askAssistant} />}
-        {tab === 'radiation' && <RadiationView scenario={scenario} days={days} dayIndex={dayIndex} data={data} />}
+        {tab === 'radiation' && <RadiationView days={days} dayIndex={dayIndex} data={data} />}
         {tab === 'checkin' && <CheckInView vault={vault} crewId={recorder} onCrewChange={setRecorder} />}
         {tab === 'pvt' && <PvtView vault={vault} crewId={recorder} onCrewChange={setRecorder} />}
         {tab === 'assistant' && <AssistantView alert={askAbout} onClearAlert={() => setAskAbout(null)} />}

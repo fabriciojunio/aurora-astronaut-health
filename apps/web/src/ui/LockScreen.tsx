@@ -74,13 +74,12 @@ export function LockScreen({ onUnlock, dbName, iterations }: Props) {
   if (mode === 'unavailable') {
     return (
       <main className="lock">
-        <section className="lock-panel">
-          <Brand />
-          <p role="alert">
-            This browser does not allow encrypted local storage (private mode blocks it in some browsers). AURORA
-            stores health data only on this device, so it cannot run here.
-          </p>
+        <LockBar />
+        <section className="lock-form">
+          <h1>Storage blocked</h1>
+          <p role="alert">Encrypted local storage is blocked in this browser. Private mode can cause this.</p>
         </section>
+        <StatusLine vault="unavailable" />
       </main>
     )
   }
@@ -88,18 +87,14 @@ export function LockScreen({ onUnlock, dbName, iterations }: Props) {
   const setup = mode === 'setup'
   return (
     <main className="lock">
-      <form className="lock-panel" onSubmit={submit} noValidate>
-        <Brand />
+      <LockBar />
+      <form className="lock-form" onSubmit={submit} noValidate>
         <h1>{setup ? 'Create your PIN' : 'Unlock'}</h1>
-        <p className="muted">
-          {setup
-            ? 'Your health records are encrypted on this device with a key derived from this PIN. There is no recovery: the key never leaves the device.'
-            : 'Enter your PIN to decrypt your records.'}
-        </p>
 
         <label htmlFor={pinId}>PIN (6 to 12 digits)</label>
         <input
           id={pinId}
+          className="pin"
           type="password"
           inputMode="numeric"
           autoComplete={setup ? 'new-password' : 'current-password'}
@@ -115,6 +110,7 @@ export function LockScreen({ onUnlock, dbName, iterations }: Props) {
             <label htmlFor={confirmId}>Repeat the PIN</label>
             <input
               id={confirmId}
+              className="pin"
               type="password"
               inputMode="numeric"
               autoComplete="new-password"
@@ -124,6 +120,7 @@ export function LockScreen({ onUnlock, dbName, iterations }: Props) {
               disabled={busy}
               required
             />
+            <p className="hint">A forgotten PIN cannot be recovered.</p>
           </>
         )}
 
@@ -136,17 +133,47 @@ export function LockScreen({ onUnlock, dbName, iterations }: Props) {
           {busy ? 'Deriving key…' : setup ? 'Create vault' : 'Unlock'}
         </button>
       </form>
+      <StatusLine vault={setup ? 'not created' : waitSeconds > 0 ? 'locked out' : 'locked'} />
     </main>
+  )
+}
+
+function LockBar() {
+  return (
+    <header className="lock-bar">
+      <Brand />
+      <span className="sim-badge">Simulated crew data</span>
+    </header>
+  )
+}
+
+function StatusLine({ vault }: { vault: string }) {
+  return (
+    <footer className="status-line" aria-label="System status">
+      <span>
+        <b>Vault</b> {vault}
+      </span>
+      <span>
+        <b>Storage</b> local, AES-256
+      </span>
+      <span>
+        <b>Link</b> not required
+      </span>
+    </footer>
   )
 }
 
 export function Brand() {
   return (
     <div className="brand">
-      <span className="brand-mark" aria-hidden="true" />
+      <svg className="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M3 22a13 13 0 0 1 26 0" fill="none" stroke="currentColor" strokeWidth="2" />
+        <path d="M7 13c5-4 13-4 18 0" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="square" />
+        <line x1="1" y1="26" x2="31" y2="26" stroke="currentColor" strokeWidth="2" />
+      </svg>
       <span>
         <strong>AURORA</strong>
-        <small>Astronaut health monitor</small>
+        <small>Crew health system</small>
       </span>
     </div>
   )

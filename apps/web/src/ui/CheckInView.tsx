@@ -199,8 +199,7 @@ export function CheckInView({ vault, crewId, onCrewChange, now = () => new Date(
           aria-describedby={`${noteId}-hint`}
         />
         <p id={`${noteId}-hint`} className="muted small">
-          Stored encrypted. Notes are never read by the alert rules or the assistant, and are not shared unless you
-          allow it.
+          Encrypted. Not read by rules or the assistant.
         </p>
 
         <p className="form-status" role="status">

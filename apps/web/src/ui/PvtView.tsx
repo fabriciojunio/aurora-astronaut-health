@@ -8,7 +8,6 @@ import {
   vigilanceBelowNormal,
   type PvtResult,
 } from '../domain/cognition'
-import { EVIDENCE } from '../domain/evidence'
 import { appendAudit } from '../storage/auditTrail'
 import type { Vault } from '../storage/vault'
 import { CrewPicker } from './CrewPicker'
@@ -163,11 +162,8 @@ export function PvtView({ vault, crewId, onCrewChange, durationMs = PVT_DURATION
       <h2 id="pvt-title">Vigilance test (PVT-B)</h2>
       <CrewPicker crewId={crewId} onChange={onCrewChange} disabled={phase === 'saving'} />
       <p>
-        For about {Math.round(durationMs / 60_000) || 1} {durationMs >= 120_000 ? 'minutes' : 'minute'}, press the
-        space bar or the button as soon as it lights up. Reactions of {LAPSE_MS} ms or more count as lapses. Sleep
-        loss shows up here before people notice it themselves.
+        Press SPACE or the button when it lights up. {Math.round(durationMs / 60_000) || 1} min. Lapse ≥ {LAPSE_MS} ms.
       </p>
-      <p className="muted small">Source: {EVIDENCE.pvtBrief.citation}.</p>
       {result && <PvtResultPanel result={result} saved={phase === 'done' && !error} />}
       <p className="form-error" role="alert">
         {error}

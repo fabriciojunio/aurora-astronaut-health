@@ -11,7 +11,7 @@ const days = runScenario(scenario)
 
 function Harness({ fetcher, dayIndex = 15 }: { fetcher: Fetcher; dayIndex?: number }) {
   const { data } = useVerifiedData(fetcher)
-  return <RadiationView scenario={scenario} days={days} dayIndex={dayIndex} data={data} />
+  return <RadiationView days={days} dayIndex={dayIndex} data={data} />
 }
 
 const fetcher = diskFetcher()

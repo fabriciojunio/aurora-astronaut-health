@@ -61,9 +61,9 @@ function CrewCard({ crewDay, days, dayIndex, model, onAsk }: Props & { crewDay: 
           </div>
         ))}
       </dl>
-      <p className="muted small">
-        Latest of 4 simulated readings on this day. NEWS2{' '}
-        {score.risk === 'incomplete' ? 'incomplete' : <strong>{score.total} ({score.risk})</strong>}
+      <p className="small">
+        <span className="label">NEWS2</span>
+        <span className="mono">{score.risk === 'incomplete' ? 'incomplete' : `${score.total} ${score.risk}`}</span>
       </p>
 
       <AnomalyPanel days={days} dayIndex={dayIndex} crewId={crewDay.crewId} model={model} />
@@ -114,12 +114,9 @@ function AnomalyPanel({ days, dayIndex, crewId, model }: Omit<Props, 'onAsk'> & 
   return (
     <section className={unusual ? 'anomaly unusual' : 'anomaly'} aria-label="Pattern check">
       <h3 className="section-title">
-        Pattern check <span className="muted small">compared with this person, not with a population</span>
+        Pattern check
       </h3>
       <AnomalyText model={model} result={result} />
-      <p className="muted small">
-        Deviations are in units of this person’s usual spread. A flag asks for a closer look; it is not a diagnosis.
-      </p>
     </section>
   )
 }

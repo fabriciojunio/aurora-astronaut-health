@@ -53,10 +53,6 @@ export function AssistantView({ alert, onClearAlert }: Props) {
     <div className="stack">
       <section className="card" aria-labelledby={`${inputId}-title`}>
         <h2 id={`${inputId}-title`}>Assistant</h2>
-        <p className="muted small">
-          Answers come only from AURORA’s procedures and cited studies, found by keyword search on this device. Nothing
-          is generated and nothing is sent anywhere. It does not diagnose or prescribe.
-        </p>
 
         {alert && (
           <p className="context">
@@ -104,7 +100,6 @@ export function AssistantView({ alert, onClearAlert }: Props) {
 
       <section className="card" aria-labelledby={`${inputId}-procedures`}>
         <h2 id={`${inputId}-procedures`}>Procedures</h2>
-        <p className="muted small">Written so any crew member can follow them, including when the medical officer is the one who is ill.</p>
         {PROCEDURES.map((p) => (
           <details key={p.id} className="procedure">
             <summary>{p.title}</summary>
