@@ -6,8 +6,14 @@ import { loadModel } from './isolationForest'
 
 const model = loadModel(JSON.parse(readFileSync(resolve(import.meta.dirname, '../../public/models/anomaly-v1.json'), 'utf-8')))
 
+const runs = new Map<string, ReturnType<typeof runScenario>>()
+const daysOf = (scenarioId: string) => {
+  if (!runs.has(scenarioId)) runs.set(scenarioId, runScenario(scenarioById(scenarioId)))
+  return runs.get(scenarioId)!
+}
+
 const flagged = (scenarioId: string, crewId: string) => {
-  const days = runScenario(scenarioById(scenarioId))
+  const days = daysOf(scenarioId)
   return days
     .map((_, i) => anomalyForDay(model, days, crewId, i))
     .flatMap((a, i) => (a.status === 'assessed' && a.anomalous ? [i] : []))
