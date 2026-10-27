@@ -1,5 +1,7 @@
 # AURORA
 
+**English** | [Português](README.pt-BR.md)
+
 Health monitoring for astronauts on long missions, built to keep working when Earth is 20 minutes
 away and the crew medical officer is the one who is ill.
 
@@ -109,7 +111,7 @@ npm run test:e2e         # Chromium, against the production build and its real h
 
 | Suite | Count | Notes |
 |---|---|---|
-| Web unit and component | 289 | real WebCrypto and IndexedDB; 97% line coverage including the UI |
+| Web unit and component | 290 | real WebCrypto and IndexedDB; 97% line coverage including the UI |
 | Web end to end | 8 | full mission day with WCAG 2.2 AA checks on every screen, offline use, CSP, tampered data |
 | Data pipeline | 40 | 99% coverage; checks the May 2024 storm in the snapshots |
 | Model | 9 | false alarms, recall, no data leaking between splits |
