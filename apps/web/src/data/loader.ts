@@ -80,9 +80,14 @@ function parseJson(bytes: ArrayBuffer, path: string): unknown {
   }
 }
 
+/** Same size cap and strict UTF-8 parsing as the snapshots, for files validated by their own schema. */
+export async function loadJson(fetcher: Fetcher, path: string): Promise<unknown> {
+  return parseJson(await fetchBytes(fetcher, path), path)
+}
+
 export async function loadManifest(fetcher: Fetcher, base = '/data'): Promise<Manifest> {
   const path = `${base}/manifest.json`
-  const result = manifestSchema.safeParse(parseJson(await fetchBytes(fetcher, path), path))
+  const result = manifestSchema.safeParse(await loadJson(fetcher, path))
   if (!result.success) throw new DataIntegrityError('Manifest does not match the expected format')
   return result.data
 }
