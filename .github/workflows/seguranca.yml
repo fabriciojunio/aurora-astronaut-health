@@ -49,4 +49,16 @@ jobs:
         with:
           languages: javascript-typescript, python
           queries: security-extended
+      # Code scanning only accepts uploads on public repositories in the free plan. While the
+      # repository is private the results stay in a SARIF file, and the next step fails the job on
+      # any finding, so the check is enforced either way.
       - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          upload: ${{ github.event.repository.private && 'never' || 'always' }}
+          output: sarif-results
+      - name: Falha se o CodeQL encontrou algum problema
+        run: |
+          found=$(jq '[.runs[].results[]] | length' sarif-results/*.sarif | awk '{s+=$1} END {print s+0}')
+          jq -r '.runs[].results[] | "\(.ruleId): \(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine)"' sarif-results/*.sarif
+          echo "CodeQL: $found resultado(s)"
+          test "$found" -eq 0
