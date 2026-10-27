@@ -6,6 +6,8 @@ import { appendAudit, readAuditTrail, verifyAuditTrail } from '../storage/auditT
 import type { Vault } from '../storage/vault'
 import { oneWayDelayMs, orderedRecords, type Batch, type MissionLink } from '../sync/outbox'
 import { buildGroundBatch, consentId, loadConsent } from '../sync/outgoing'
+import type { Lang, MessageKey } from '../i18n/messages'
+import { useI18n } from '../i18n/useI18n'
 import { CrewPicker } from './CrewPicker'
 import type { GroundLink } from './useGroundLink'
 
@@ -17,19 +19,30 @@ interface Props {
   link: GroundLink
 }
 
-const AUDIENCE_LABEL: Record<Audience, string> = {
-  crewMedicalOfficer: 'Crew medical officer',
-  ground: 'Flight surgeon (ground)',
+const AUDIENCE_LABEL: Record<Audience, MessageKey> = {
+  crewMedicalOfficer: 'audience.crewMedicalOfficer',
+  ground: 'audience.ground',
 }
 
-const CATEGORY_LABEL: Record<DataCategory, string> = {
-  alerts: 'Alerts',
-  vitals: 'Vital signs',
-  checkins: 'Check-ins',
-  cognition: 'Vigilance tests',
-  radiation: 'Radiation dose',
-  notes: 'Free-text notes',
+const CATEGORY_LABEL: Record<DataCategory, MessageKey> = {
+  alerts: 'category.alerts',
+  vitals: 'category.vitals',
+  checkins: 'category.checkins',
+  cognition: 'category.cognition',
+  radiation: 'category.radiation',
+  notes: 'category.notes',
 }
+
+// The audit chain reports why it broke in English; the screen words it for the reader.
+const REASON_PT: Record<string, string> = {
+  'sequence gap or reorder': 'lacuna ou reordenação na sequência',
+  'broken link': 'elo rompido',
+  'content changed': 'conteúdo alterado',
+  'invalid signature': 'assinatura inválida',
+  'known head missing (truncated chain)': 'cabeça conhecida ausente (cadeia truncada)',
+}
+
+type Translate = (key: MessageKey, vars?: Record<string, string | number>) => string
 
 const LINK_OF: Record<RadiationEnvironment, MissionLink> = {
   iss: 'iss',
@@ -41,14 +54,14 @@ const LINK_OF: Record<RadiationEnvironment, MissionLink> = {
 const MARS_DELAYS = [3, 12, 22]
 
 const clock = (ms: number) => new Date(ms).toISOString().slice(11, 19)
-const records = (count: number) => `${count} ${count === 1 ? 'record' : 'records'}`
 
 export function PrivacyView({ vault, crewId, onCrewChange, environment, link }: Props) {
   const [consent, setConsentState] = useState<ConsentState | null>(null)
   const [trail, setTrail] = useState<AuditEntry[]>([])
   const [verification, setVerification] = useState<ChainVerification | null>(null)
   const [marsMinutes, setMarsMinutes] = useState(12)
-  const [message, setMessage] = useState('')
+  const { t, lang } = useI18n()
+  const [message, setMessage] = useState<{ key: MessageKey; n?: number } | null>(null)
   const ids = useId()
   const missionLink = LINK_OF[environment]
   const delayMs = oneWayDelayMs(missionLink, marsMinutes)
@@ -63,7 +76,7 @@ export function PrivacyView({ vault, crewId, onCrewChange, environment, link }: 
 
   useEffect(() => {
     let active = true
-    readAuditTrail(vault).then((t) => active && setTrail(t))
+    readAuditTrail(vault).then((entries) => active && setTrail(entries))
     return () => {
       active = false
     }
@@ -82,20 +95,22 @@ export function PrivacyView({ vault, crewId, onCrewChange, environment, link }: 
       await appendAudit(vault, { actor: crewId, action: 'consent.changed', detail: { audience, category, allowed } })
     } catch {
       setConsentState(previous)
-      setMessage('The change could not be saved. Nothing was shared.')
+      setMessage({ key: 'privacy.saveFailed' })
     }
   }
 
   async function send(tamper: boolean) {
-    setMessage('')
+    setMessage(null)
     const batch = await buildGroundBatch(vault, crewId)
     if (!batch) {
-      setMessage('Nothing to send: no stored record is allowed for the ground.')
+      setMessage({ key: 'privacy.nothing' })
       return
     }
     await appendAudit(vault, { actor: crewId, action: 'sync.sent', detail: { batchId: batch.batchId, records: batch.records.length } })
     link.send(tamper ? tamperInTransit(batch) : batch, delayMs)
-    setMessage(`Sent ${records(batch.records.length)}${tamper ? ', and one was altered in transit' : ''}.`)
+    const n = batch.records.length
+    if (tamper) setMessage({ key: n === 1 ? 'privacy.sentTamperedOne' : 'privacy.sentTampered', n })
+    else setMessage({ key: n === 1 ? 'privacy.sentOne' : 'privacy.sent', n })
   }
 
   async function verify() {
@@ -108,16 +123,16 @@ export function PrivacyView({ vault, crewId, onCrewChange, environment, link }: 
   return (
     <div className="stack">
       <section className="card" aria-labelledby={`${ids}-consent`}>
-        <h2 id={`${ids}-consent`}>Who can see your data</h2>
+        <h2 id={`${ids}-consent`}>{t('privacy.who')}</h2>
         <CrewPicker crewId={crewId} onChange={onCrewChange} />
         {consent && (
           <table className="consent">
             <thead>
               <tr>
-                <th scope="col">Data</th>
+                <th scope="col">{t('privacy.data')}</th>
                 {AUDIENCES.map((a) => (
                   <th key={a} scope="col">
-                    {AUDIENCE_LABEL[a]}
+                    {t(AUDIENCE_LABEL[a])}
                   </th>
                 ))}
               </tr>
@@ -125,12 +140,12 @@ export function PrivacyView({ vault, crewId, onCrewChange, environment, link }: 
             <tbody>
               {DATA_CATEGORIES.map((c) => (
                 <tr key={c}>
-                  <th scope="row">{CATEGORY_LABEL[c]}</th>
+                  <th scope="row">{t(CATEGORY_LABEL[c])}</th>
                   {AUDIENCES.map((a) => (
                     <td key={a}>
                       <input
                         type="checkbox"
-                        aria-label={`Share ${CATEGORY_LABEL[c]} with ${AUDIENCE_LABEL[a]}`}
+                        aria-label={t('privacy.share', { category: t(CATEGORY_LABEL[c]), audience: t(AUDIENCE_LABEL[a]) })}
                         checked={consent[a][c]}
                         onChange={(e) => void toggle(a, c, e.target.checked)}
                       />
@@ -144,17 +159,17 @@ export function PrivacyView({ vault, crewId, onCrewChange, environment, link }: 
       </section>
 
       <section className="card" aria-labelledby={`${ids}-sync`}>
-        <h2 id={`${ids}-sync`}>Send to the ground</h2>
+        <h2 id={`${ids}-sync`}>{t('privacy.send')}</h2>
         <p>
-          One-way delay for this mission: <strong>{delayLabel(missionLink, delayMs)}</strong>
+          {t('privacy.delay')} <strong>{delayLabel(missionLink, delayMs, t, lang)}</strong>
         </p>
         {missionLink === 'mars' && (
           <div className="field inline">
-            <label htmlFor={`${ids}-mars`}>Earth to Mars distance today</label>
+            <label htmlFor={`${ids}-mars`}>{t('privacy.marsDistance')}</label>
             <select id={`${ids}-mars`} value={marsMinutes} onChange={(e) => setMarsMinutes(Number(e.target.value))}>
               {MARS_DELAYS.map((m) => (
                 <option key={m} value={m}>
-                  {m} minutes one way
+                  {t('privacy.marsOption', { min: m })}
                 </option>
               ))}
             </select>
@@ -162,73 +177,78 @@ export function PrivacyView({ vault, crewId, onCrewChange, environment, link }: 
         )}
         <div className="button-row">
           <button type="button" className="primary" onClick={() => void send(false)}>
-            Send allowed data
+            {t('privacy.sendAllowed')}
           </button>
           <button type="button" onClick={() => void send(true)}>
-            Send and alter it in transit (demo)
+            {t('privacy.sendTampered')}
           </button>
         </div>
         <p className="form-status" role="status">
-          {message}
+          {message && t(message.key, { n: message.n ?? 0 })}
         </p>
 
         {link.pending.length > 0 && (
           <>
-            <h3 className="section-title">In transit</h3>
+            <h3 className="section-title">{t('privacy.inTransit')}</h3>
             <ul className="plain">
               {link.pending.map((d) => (
                 <li key={d.batch.batchId} className="mono small">
-                  {records(d.batch.records.length)}, arrives {clock(d.arrivesAt)} UTC
+                  {d.batch.records.length === 1
+                    ? t('privacy.arrivesOne', { time: clock(d.arrivesAt) })
+                    : t('privacy.arrives', { n: d.batch.records.length, time: clock(d.arrivesAt) })}
                 </li>
               ))}
             </ul>
             <button type="button" className="link" onClick={link.deliverAllNow}>
-              Skip the wait (training mode)
+              {t('privacy.skip')}
             </button>
           </>
         )}
 
-        <h3 className="section-title">Ground station</h3>
+        <h3 className="section-title">{t('privacy.ground')}</h3>
         <dl className="readouts">
           <div>
-            <dt>Records received</dt>
+            <dt>{t('privacy.received')}</dt>
             <dd>{received.length}</dd>
           </div>
           <div>
-            <dt>Batches rejected</dt>
+            <dt>{t('privacy.rejected')}</dt>
             <dd className={link.ground.rejectedBatches.length > 0 ? 'high' : undefined}>
               {link.ground.rejectedBatches.length}
             </dd>
           </div>
           <div>
-            <dt>Last audit head</dt>
-            <dd>{link.ground.lastAuditHead ? `${link.ground.lastAuditHead.slice(0, 12)}…` : 'none'}</dd>
+            <dt>{t('privacy.head')}</dt>
+            <dd>{link.ground.lastAuditHead ? `${link.ground.lastAuditHead.slice(0, 12)}…` : t('privacy.noHead')}</dd>
           </div>
         </dl>
         {link.ground.rejectedBatches.length > 0 && (
-          <p className="small">A batch failed its signature check and was discarded. The ground never stores data it cannot verify.</p>
+          <p className="small">{t('privacy.rejectedNote')}</p>
         )}
       </section>
 
       <section className="card" aria-labelledby={`${ids}-audit`}>
-        <h2 id={`${ids}-audit`}>Audit trail</h2>
+        <h2 id={`${ids}-audit`}>{t('privacy.audit')}</h2>
         <button type="button" onClick={() => void verify()}>
-          Verify the chain
+          {t('privacy.verify')}
         </button>
         {verification && (
           <p role="status" className={verification.ok ? 'ok-text' : 'bad-text'}>
             {verification.ok
-              ? `Chain intact: ${verification.length} entries, every signature valid.`
-              : `Chain broken at entry ${verification.brokenAt}: ${verification.reason}.`}
+              ? t('privacy.intact', { n: verification.length })
+              : t('privacy.broken', {
+                  at: verification.brokenAt,
+                  reason: lang === 'pt' ? (REASON_PT[verification.reason] ?? verification.reason) : verification.reason,
+                })}
           </p>
         )}
         <table className="audit">
           <thead>
             <tr>
               <th scope="col">#</th>
-              <th scope="col">Time (UTC)</th>
-              <th scope="col">Who</th>
-              <th scope="col">What</th>
+              <th scope="col">{t('privacy.colTime')}</th>
+              <th scope="col">{t('privacy.colWho')}</th>
+              <th scope="col">{t('privacy.colWhat')}</th>
             </tr>
           </thead>
           <tbody>
@@ -247,10 +267,13 @@ export function PrivacyView({ vault, crewId, onCrewChange, environment, link }: 
   )
 }
 
-function delayLabel(link: MissionLink, ms: number): string {
-  if (link === 'iss') return 'none (continuous coverage from low Earth orbit)'
-  if (link === 'moon') return `${(ms / 1000).toFixed(1)} s (Moon)`
-  return `${Math.round(ms / 60_000)} min (Mars)`
+function delayLabel(link: MissionLink, ms: number, t: Translate, lang: Lang): string {
+  if (link === 'iss') return t('privacy.delayIss')
+  if (link === 'moon') {
+    const s = (ms / 1000).toFixed(1)
+    return t('privacy.delayMoon', { s: lang === 'pt' ? s.replace('.', ',') : s })
+  }
+  return t('privacy.delayMars', { min: Math.round(ms / 60_000) })
 }
 
 /** Changes one value after signing, the way a corrupted or forged relay would. */

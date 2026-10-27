@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import type { DailyDose } from '../domain/radiation'
+import { useI18n } from '../i18n/useI18n'
 
 interface Props {
   title: string
@@ -24,12 +25,13 @@ function barPath(x: number, y: number, w: number, h: number): string {
   return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`
 }
 
-const shortDate = (date: string) => `${Number(date.slice(8, 10))} May`
-
 // Each environment gets its own scale: the lunar storm peak is about 100 times a quiet day on Mars,
 // so a shared axis would flatten two of the three charts.
 export function DailyDoseChart({ title, days, spikes }: Props) {
   const [hover, setHover] = useState<number | null>(null)
+  const { t, lang } = useI18n()
+  const shortDate = (date: string) => `${Number(date.slice(8, 10))} ${t('chart.month')}`
+  const num = (v: number) => (lang === 'pt' ? v.toLocaleString('pt-BR') : String(v))
   const captionId = useId()
   const plotW = WIDTH - PAD.left - PAD.right
   const plotH = HEIGHT - PAD.top - PAD.bottom
@@ -49,7 +51,7 @@ export function DailyDoseChart({ title, days, spikes }: Props) {
         <svg
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
           role="img"
-          aria-label={`${title}: daily absorbed dose for ${days.length} days, ${spikes.size} spike ${spikes.size === 1 ? 'day' : 'days'}. Values in the table below.`}
+          aria-label={t(spikes.size === 1 ? 'chart.ariaOne' : 'chart.aria', { title, days: days.length, spikes: spikes.size })}
           onPointerLeave={() => setHover(null)}
         >
           {ticks.map((t) => (
@@ -106,29 +108,29 @@ export function DailyDoseChart({ title, days, spikes }: Props) {
             role="status"
           >
             <strong>{shortDate(hovered.date)} 2024</strong>
-            <span>{hovered.absorbedUgy} µGy absorbed</span>
-            <span>≈ {hovered.equivalentUsv} µSv equivalent (est.)</span>
-            {hovered.hoursCovered < 24 && <span className="muted">{hovered.hoursCovered} of 24 h measured</span>}
+            <span>{t('chart.absorbed', { v: num(hovered.absorbedUgy) })}</span>
+            <span>{t('chart.equivalent', { v: num(hovered.equivalentUsv) })}</span>
+            {hovered.hoursCovered < 24 && <span className="muted">{t('chart.hours', { h: hovered.hoursCovered })}</span>}
           </div>
         )}
       </div>
       <details className="chart-table">
-        <summary>Table</summary>
+        <summary>{t('chart.table')}</summary>
         <table>
           <thead>
             <tr>
-              <th scope="col">Date</th>
-              <th scope="col">Absorbed (µGy)</th>
-              <th scope="col">Equivalent, est. (µSv)</th>
-              <th scope="col">Hours measured</th>
+              <th scope="col">{t('chart.date')}</th>
+              <th scope="col">{t('chart.colAbsorbed')}</th>
+              <th scope="col">{t('chart.colEquivalent')}</th>
+              <th scope="col">{t('chart.colHours')}</th>
             </tr>
           </thead>
           <tbody>
             {days.map((d) => (
               <tr key={d.date}>
                 <td>{d.date}</td>
-                <td>{d.absorbedUgy}</td>
-                <td>{d.equivalentUsv}</td>
+                <td>{num(d.absorbedUgy)}</td>
+                <td>{num(d.equivalentUsv)}</td>
                 <td>{d.hoursCovered}</td>
               </tr>
             ))}

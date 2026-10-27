@@ -5,7 +5,9 @@ import { CREW } from '../sim/crew'
 import { appendAudit } from '../storage/auditTrail'
 import type { Vault } from '../storage/vault'
 import { CrewPicker } from './CrewPicker'
-import { SEVERITY_LABEL, SYMPTOM_LABEL } from './labels'
+import { alertText, severityName, symptomName } from '../i18n/content'
+import type { MessageKey } from '../i18n/messages'
+import { useI18n } from '../i18n/useI18n'
 
 interface Props {
   vault: Vault
@@ -15,17 +17,17 @@ interface Props {
 }
 
 const SCALES = [
-  { key: 'sleepQuality', label: 'Sleep quality', low: 'very poor', high: 'very good' },
-  { key: 'mood', label: 'Mood', low: 'very low', high: 'very good' },
-  { key: 'stress', label: 'Stress', low: 'none', high: 'very high' },
-] as const
+  { key: 'sleepQuality', label: 'checkin.sleepQuality', range: 'checkin.scaleSleep' },
+  { key: 'mood', label: 'checkin.mood', range: 'checkin.scaleMood' },
+  { key: 'stress', label: 'checkin.stress', range: 'checkin.scaleStress' },
+] as const satisfies readonly { key: string; label: MessageKey; range: MessageKey }[]
 
 const NUMBERS = [
-  { key: 'sleepHours', label: 'Sleep last night (hours)', step: 0.5, max: 16 },
-  { key: 'hydrationMl', label: 'Fluids yesterday (ml)', step: 100, max: 8000 },
-  { key: 'resistanceMin', label: 'Resistance exercise (min)', step: 5, max: 300 },
-  { key: 'aerobicMin', label: 'Aerobic exercise (min)', step: 5, max: 300 },
-] as const
+  { key: 'sleepHours', label: 'checkin.sleepHours', step: 0.5, max: 16 },
+  { key: 'hydrationMl', label: 'checkin.hydration', step: 100, max: 8000 },
+  { key: 'resistanceMin', label: 'checkin.resistance', step: 5, max: 300 },
+  { key: 'aerobicMin', label: 'checkin.aerobic', step: 5, max: 300 },
+] as const satisfies readonly { key: string; label: MessageKey; step: number; max: number }[]
 
 type Draft = {
   sleepHours: string
@@ -56,9 +58,10 @@ const toNumber = (text: string) => (text.trim() === '' ? Number.NaN : Number(tex
 
 export function CheckInView({ vault, crewId, onCrewChange, now = () => new Date() }: Props) {
   const [draft, setDraft] = useState<Draft>(EMPTY)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const { t, lang } = useI18n()
+  const [errors, setErrors] = useState<Record<string, MessageKey>>({})
   const [saving, setSaving] = useState(false)
-  const [status, setStatus] = useState('')
+  const [status, setStatus] = useState<MessageKey | null>(null)
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [history, setHistory] = useState<CheckIn[]>([])
   const noteId = useId()
@@ -76,7 +79,7 @@ export function CheckInView({ vault, crewId, onCrewChange, now = () => new Date(
 
   async function submit(event: FormEvent) {
     event.preventDefault()
-    setStatus('')
+    setStatus(null)
     const parsed = checkInSchema.safeParse({
       crewId,
       at: now().toISOString(),
@@ -93,10 +96,10 @@ export function CheckInView({ vault, crewId, onCrewChange, now = () => new Date(
       note: draft.note,
     })
     if (!parsed.success) {
-      const fieldErrors: Record<string, string> = {}
+      const fieldErrors: Record<string, MessageKey> = {}
       for (const issue of parsed.error.issues) {
         const field = String(issue.path[0] ?? 'form')
-        fieldErrors[field] ??= field === 'note' ? 'Keep the note under 500 characters.' : 'Enter a number in the allowed range.'
+        fieldErrors[field] ??= field === 'note' ? 'checkin.noteError' : 'checkin.numberError'
       }
       setErrors(fieldErrors)
       return
@@ -114,9 +117,9 @@ export function CheckInView({ vault, crewId, onCrewChange, now = () => new Date(
         evaluate({ crewId, now: now(), vitals: [], checkIns: all, pvt: [] }).filter((a) => a.area !== 'clinical'),
       )
       setDraft(EMPTY)
-      setStatus('Saved encrypted on this device.')
+      setStatus('checkin.saved')
     } catch {
-      setStatus('The check-in could not be saved. Nothing was stored.')
+      setStatus('checkin.failed')
     } finally {
       setSaving(false)
     }
@@ -131,13 +134,13 @@ export function CheckInView({ vault, crewId, onCrewChange, now = () => new Date(
   return (
     <div className="stack">
       <form className="card" onSubmit={submit} noValidate aria-labelledby={`${formId}-title`}>
-        <h2 id={`${formId}-title`}>Daily check-in</h2>
+        <h2 id={`${formId}-title`}>{t('checkin.title')}</h2>
         <CrewPicker crewId={crewId} onChange={onCrewChange} disabled={saving} />
 
         <div className="form-grid">
           {NUMBERS.map((n) => (
             <div key={n.key}>
-              <label htmlFor={`${formId}-${n.key}`}>{n.label}</label>
+              <label htmlFor={`${formId}-${n.key}`}>{t(n.label)}</label>
               <input
                 id={`${formId}-${n.key}`}
                 type="number"
@@ -152,7 +155,7 @@ export function CheckInView({ vault, crewId, onCrewChange, now = () => new Date(
               />
               {errors[n.key] && (
                 <p id={`${formId}-${n.key}-error`} className="field-error">
-                  {errors[n.key]}
+                  {t(errors[n.key]!)}
                 </p>
               )}
             </div>
@@ -162,7 +165,7 @@ export function CheckInView({ vault, crewId, onCrewChange, now = () => new Date(
         {SCALES.map((scale) => (
           <fieldset key={scale.key} className="scale">
             <legend>
-              {scale.label} <span className="muted small">1 {scale.low}, 5 {scale.high}</span>
+              {t(scale.label)} <span className="muted small">{t(scale.range)}</span>
             </legend>
             {[1, 2, 3, 4, 5].map((v) => (
               <label key={v}>
@@ -180,16 +183,16 @@ export function CheckInView({ vault, crewId, onCrewChange, now = () => new Date(
         ))}
 
         <fieldset className="symptoms">
-          <legend>Symptoms since yesterday</legend>
+          <legend>{t('checkin.symptoms')}</legend>
           {SYMPTOMS.map((s) => (
             <label key={s}>
               <input type="checkbox" checked={draft.symptoms.includes(s)} onChange={() => toggleSymptom(s)} />
-              {SYMPTOM_LABEL[s]}
+              {symptomName(s, lang)}
             </label>
           ))}
         </fieldset>
 
-        <label htmlFor={noteId}>Note (optional)</label>
+        <label htmlFor={noteId}>{t('checkin.note')}</label>
         <textarea
           id={noteId}
           rows={3}
@@ -199,28 +202,28 @@ export function CheckInView({ vault, crewId, onCrewChange, now = () => new Date(
           aria-describedby={`${noteId}-hint`}
         />
         <p id={`${noteId}-hint`} className="muted small">
-          Encrypted. Not read by rules or the assistant.
+          {t('checkin.noteHint')}
         </p>
 
         <p className="form-status" role="status">
-          {status}
+          {status && t(status)}
         </p>
         <button type="submit" className="primary" disabled={saving}>
-          {saving ? 'Saving…' : 'Save check-in'}
+          {saving ? t('checkin.saving') : t('checkin.save')}
         </button>
       </form>
 
       {alerts.length > 0 && (
         <section className="card" aria-labelledby={`${formId}-alerts`}>
-          <h2 id={`${formId}-alerts`}>From your check-ins</h2>
+          <h2 id={`${formId}-alerts`}>{t('checkin.fromYours')}</h2>
           <ul className="alerts">
             {alerts.map((a) => (
               <li key={a.key} className={`alert ${a.severity}`}>
                 <div className="alert-head">
-                  <span className={`pill ${a.severity}`}>{SEVERITY_LABEL[a.severity]}</span>
-                  <strong>{a.title}</strong>
+                  <span className={`pill ${a.severity}`}>{severityName(a.severity, lang)}</span>
+                  <strong>{alertText(a, lang).title}</strong>
                 </div>
-                <p>{a.action}</p>
+                <p>{alertText(a, lang).action}</p>
               </li>
             ))}
           </ul>
@@ -228,7 +231,9 @@ export function CheckInView({ vault, crewId, onCrewChange, now = () => new Date(
       )}
 
       <p className="muted small">
-        {history.length} {history.length === 1 ? 'check-in' : 'check-ins'} stored for {profile?.name ?? crewId}.
+        {history.length === 1
+          ? t('checkin.countOne', { name: profile?.name ?? crewId })
+          : t('checkin.count', { n: history.length, name: profile?.name ?? crewId })}
       </p>
     </div>
   )

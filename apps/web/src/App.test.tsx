@@ -159,3 +159,43 @@ describe('mission view', () => {
     expect(screen.getByText(/^Source: Mehta, Crucian et al/)).toBeInTheDocument()
   })
 })
+
+describe('Portuguese version', () => {
+  afterEach(() => localStorage.clear())
+
+  it('switches the whole interface, alerts included, and remembers the choice', async () => {
+    const { user, unmount } = renderApp()
+    await screen.findByRole('heading', { name: 'Create your PIN' })
+    await user.click(screen.getByRole('button', { name: /Português/ }))
+    expect(screen.getByRole('heading', { name: 'Crie seu PIN' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Português/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(document.documentElement.lang).toBe('pt-BR')
+    expect(localStorage.getItem('aurora.lang')).toBe('pt')
+
+    await user.type(screen.getByLabelText(/^PIN/), PIN)
+    await user.type(screen.getByLabelText('Repita o PIN'), PIN)
+    await user.click(screen.getByRole('button', { name: 'Criar cofre' }))
+    await screen.findByRole('tablist', { name: 'Telas' })
+    await user.selectOptions(screen.getByLabelText('Cenário'), 'Febre no oficial médico da tripulação')
+
+    const okafor = screen.getByRole('article', { name: 'M. Okafor' })
+    expect(await within(okafor).findByText('Padrão incomum')).toBeInTheDocument()
+    expect(within(okafor).getByText('Possível sintoma imunológico')).toBeInTheDocument()
+    expect(within(okafor).getByRole('list', { name: 'Sinais mais distantes do normal' })).toHaveTextContent('Temperatura')
+    expect(screen.queryByText(/Possible immune-related symptom/)).not.toBeInTheDocument()
+    unmount()
+
+    renderApp()
+    expect(await screen.findByRole('heading', { name: 'Crie seu PIN' })).toBeInTheDocument()
+  })
+
+  it('shows PIN errors in Portuguese', async () => {
+    const { user } = renderApp()
+    await user.click(await screen.findByRole('button', { name: /Português/ }))
+    await user.type(screen.getByLabelText(/^PIN/), '123456')
+    await user.type(screen.getByLabelText('Repita o PIN'), '123456')
+    await user.click(screen.getByRole('button', { name: 'Criar cofre' }))
+    expect(await screen.findByText('O PIN não pode ser uma sequência simples.')).toBeInTheDocument()
+  })
+})
+

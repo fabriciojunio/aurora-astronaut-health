@@ -1,4 +1,7 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
+import { LanguageSwitch } from '../i18n/LanguageSwitch'
+import type { MessageKey } from '../i18n/messages'
+import { useI18n } from '../i18n/useI18n'
 import { PinPolicyError, Vault, VaultLockedError, WrongPinError, checkPinPolicy } from '../storage/vault'
 
 interface Props {
@@ -10,11 +13,19 @@ interface Props {
 
 type Mode = 'checking' | 'setup' | 'unlock' | 'unavailable'
 
+// The vault reports policy problems in English; the screen shows them in the reader's language.
+function policyKey(message: string): MessageKey {
+  if (message.includes('repeat')) return 'lock.policyRepeat'
+  if (message.includes('sequence')) return 'lock.policySequence'
+  return 'lock.policyLength'
+}
+
 export function LockScreen({ onUnlock, dbName, iterations }: Props) {
+  const { t } = useI18n()
   const [mode, setMode] = useState<Mode>('checking')
   const [pin, setPin] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError] = useState<MessageKey | null>(null)
   const [busy, setBusy] = useState(false)
   const [lockedUntil, setLockedUntil] = useState(0)
   const [now, setNow] = useState(() => Date.now())
@@ -41,25 +52,32 @@ export function LockScreen({ onUnlock, dbName, iterations }: Props) {
 
   async function submit(event: FormEvent) {
     event.preventDefault()
-    setError('')
+    setError(null)
     setBusy(true)
     try {
       if (mode === 'setup') {
-        checkPinPolicy(pin)
-        if (pin !== confirm) throw new PinPolicyError('The two PINs do not match.')
+        try {
+          checkPinPolicy(pin)
+        } catch (err) {
+          if (err instanceof PinPolicyError) throw new PinPolicyError(policyKey(err.message))
+          throw err
+        }
+        if (pin !== confirm) throw new PinPolicyError('lock.mismatch')
       }
       const vault =
         mode === 'setup' ? await Vault.create(pin, { dbName, iterations }) : await Vault.unlock(pin, { dbName })
       onUnlock(vault)
     } catch (err) {
-      if (err instanceof PinPolicyError || err instanceof WrongPinError) {
-        setError(err.message)
+      if (err instanceof PinPolicyError) {
+        setError(err.message as MessageKey)
+      } else if (err instanceof WrongPinError) {
+        setError('lock.wrong')
       } else if (err instanceof VaultLockedError) {
         setLockedUntil(Date.now() + err.retryAfterMs)
         setNow(Date.now())
-        setError('Too many wrong PINs. Wait before trying again.')
+        setError('lock.tooMany')
       } else {
-        setError('The vault could not be opened on this device.')
+        setError('lock.failed')
       }
     } finally {
       // The PIN never stays in memory longer than the attempt.
@@ -76,10 +94,10 @@ export function LockScreen({ onUnlock, dbName, iterations }: Props) {
       <main className="lock">
         <LockBar />
         <section className="lock-form">
-          <h1>Storage blocked</h1>
-          <p role="alert">Encrypted local storage is blocked in this browser. Private mode can cause this.</p>
+          <h1>{t('lock.blocked')}</h1>
+          <p role="alert">{t('lock.blockedText')}</p>
         </section>
-        <StatusLine vault="unavailable" />
+        <StatusLine vault="status.unavailable" />
       </main>
     )
   }
@@ -89,9 +107,9 @@ export function LockScreen({ onUnlock, dbName, iterations }: Props) {
     <main className="lock">
       <LockBar />
       <form className="lock-form" onSubmit={submit} noValidate>
-        <h1>{setup ? 'Create your PIN' : 'Unlock'}</h1>
+        <h1>{setup ? t('lock.create') : t('lock.unlock')}</h1>
 
-        <label htmlFor={pinId}>PIN (6 to 12 digits)</label>
+        <label htmlFor={pinId}>{t('lock.pin')}</label>
         <input
           id={pinId}
           className="pin"
@@ -107,7 +125,7 @@ export function LockScreen({ onUnlock, dbName, iterations }: Props) {
 
         {setup && (
           <>
-            <label htmlFor={confirmId}>Repeat the PIN</label>
+            <label htmlFor={confirmId}>{t('lock.repeat')}</label>
             <input
               id={confirmId}
               className="pin"
@@ -120,50 +138,54 @@ export function LockScreen({ onUnlock, dbName, iterations }: Props) {
               disabled={busy}
               required
             />
-            <p className="hint">A forgotten PIN cannot be recovered.</p>
+            <p className="hint">{t('lock.noRecovery')}</p>
           </>
         )}
 
         <p className="form-error" role="alert">
-          {error}
-          {waitSeconds > 0 && ` Try again in ${waitSeconds} s.`}
+          {error && t(error)}
+          {waitSeconds > 0 && ` ${t('lock.retryIn', { s: waitSeconds })}`}
         </p>
 
         <button type="submit" className="primary" disabled={busy || waitSeconds > 0 || pin.length === 0}>
-          {busy ? 'Deriving key…' : setup ? 'Create vault' : 'Unlock'}
+          {busy ? t('lock.deriving') : setup ? t('lock.createVault') : t('lock.unlock')}
         </button>
       </form>
-      <StatusLine vault={setup ? 'not created' : waitSeconds > 0 ? 'locked out' : 'locked'} />
+      <StatusLine vault={setup ? 'status.notCreated' : waitSeconds > 0 ? 'status.lockedOut' : 'status.locked'} />
     </main>
   )
 }
 
 function LockBar() {
+  const { t } = useI18n()
   return (
     <header className="lock-bar">
       <Brand />
-      <span className="sim-badge">Simulated crew data</span>
+      <span className="sim-badge">{t('sim.badge')}</span>
+      <LanguageSwitch />
     </header>
   )
 }
 
-function StatusLine({ vault }: { vault: string }) {
+function StatusLine({ vault }: { vault: MessageKey }) {
+  const { t } = useI18n()
   return (
-    <footer className="status-line" aria-label="System status">
+    <footer className="status-line" aria-label={t('status.label')}>
       <span>
-        <b>Vault</b> {vault}
+        <b>{t('status.vault')}</b> {t(vault)}
       </span>
       <span>
-        <b>Storage</b> local, AES-256
+        <b>{t('status.storage')}</b> {t('status.local')}
       </span>
       <span>
-        <b>Link</b> not required
+        <b>{t('status.link')}</b> {t('status.notRequired')}
       </span>
     </footer>
   )
 }
 
 export function Brand() {
+  const { t } = useI18n()
   return (
     <div className="brand">
       <svg className="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
@@ -173,7 +195,7 @@ export function Brand() {
       </svg>
       <span>
         <strong>AURORA</strong>
-        <small>Crew health system</small>
+        <small>{t('brand.tagline')}</small>
       </span>
     </div>
   )

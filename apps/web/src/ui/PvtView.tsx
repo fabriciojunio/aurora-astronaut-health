@@ -8,6 +8,8 @@ import {
   vigilanceBelowNormal,
   type PvtResult,
 } from '../domain/cognition'
+import type { MessageKey } from '../i18n/messages'
+import { useI18n } from '../i18n/useI18n'
 import { appendAudit } from '../storage/auditTrail'
 import type { Vault } from '../storage/vault'
 import { CrewPicker } from './CrewPicker'
@@ -32,11 +34,13 @@ const NO_RESPONSE_MS = 30_000
 type Phase = 'idle' | 'running' | 'saving' | 'done'
 
 export function PvtView({ vault, crewId, onCrewChange, durationMs = PVT_DURATION_MS, random = Math.random }: Props) {
+  const { t } = useI18n()
   const [phase, setPhase] = useState<Phase>('idle')
   const [stimulus, setStimulus] = useState(false)
-  const [feedback, setFeedback] = useState('')
+  // A reaction time in ms, or a message key; kept as data so a language switch rewords it.
+  const [feedback, setFeedback] = useState<number | MessageKey | null>(null)
   const [result, setResult] = useState<PvtResult | null>(null)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<MessageKey | null>(null)
   const responses = useRef<PvtResponse[]>([])
   const queue = useRef<number[]>([])
   const shownAt = useRef<number | null>(null)
@@ -60,7 +64,7 @@ export function PvtView({ vault, crewId, onCrewChange, durationMs = PVT_DURATION
       })
       setPhase('done')
     } catch {
-      setError('The result could not be saved. It is shown here but was not stored.')
+      setError('pvt.saveFailed')
       setPhase('done')
     }
   }
@@ -83,7 +87,7 @@ export function PvtView({ vault, crewId, onCrewChange, durationMs = PVT_DURATION
     responses.current.push({ reactionMs: Math.round(reactionMs) })
     shownAt.current = null
     setStimulus(false)
-    setFeedback(reactionMs >= NO_RESPONSE_MS ? 'No response' : `${Math.round(reactionMs)} ms`)
+    setFeedback(reactionMs >= NO_RESPONSE_MS ? 'pvt.noResponse' : Math.round(reactionMs))
     next()
   }
 
@@ -92,7 +96,7 @@ export function PvtView({ vault, crewId, onCrewChange, durationMs = PVT_DURATION
     if (shownAt.current === null) {
       // Pressing with nothing on screen is a false start; the wait for the next stimulus continues.
       responses.current.push({ reactionMs: null })
-      setFeedback('Too early')
+      setFeedback('pvt.tooEarly')
       return
     }
     record(performance.now() - shownAt.current)
@@ -121,8 +125,8 @@ export function PvtView({ vault, crewId, onCrewChange, durationMs = PVT_DURATION
     shownAt.current = null
     running.current = true
     setResult(null)
-    setError('')
-    setFeedback('')
+    setError(null)
+    setFeedback(null)
     setPhase('running')
     next()
   }
@@ -138,20 +142,20 @@ export function PvtView({ vault, crewId, onCrewChange, durationMs = PVT_DURATION
   if (phase === 'running') {
     return (
       <section className="card pvt" aria-labelledby="pvt-title">
-        <h2 id="pvt-title">Vigilance test running</h2>
+        <h2 id="pvt-title">{t('pvt.running')}</h2>
         <button
           type="button"
           className={stimulus ? 'pvt-target on' : 'pvt-target'}
           onPointerDown={press}
-          aria-label="Response button"
+          aria-label={t('pvt.response')}
         >
-          {stimulus ? 'Press now' : 'Wait'}
+          {stimulus ? t('pvt.pressNow') : t('pvt.wait')}
         </button>
         <p className="pvt-feedback mono" aria-live="polite">
-          {feedback}
+          {typeof feedback === 'number' ? `${feedback} ms` : feedback && t(feedback)}
         </p>
         <button type="button" className="ghost" onClick={stop}>
-          Stop without saving
+          {t('pvt.stop')}
         </button>
       </section>
     )
@@ -159,51 +163,50 @@ export function PvtView({ vault, crewId, onCrewChange, durationMs = PVT_DURATION
 
   return (
     <section className="card pvt" aria-labelledby="pvt-title">
-      <h2 id="pvt-title">Vigilance test (PVT-B)</h2>
+      <h2 id="pvt-title">{t('pvt.title')}</h2>
       <CrewPicker crewId={crewId} onChange={onCrewChange} disabled={phase === 'saving'} />
-      <p>
-        Press SPACE or the button when it lights up. {Math.round(durationMs / 60_000) || 1} min. Lapse ≥ {LAPSE_MS} ms.
-      </p>
+      <p>{t('pvt.instructions', { min: Math.round(durationMs / 60_000) || 1, lapse: LAPSE_MS })}</p>
       {result && <PvtResultPanel result={result} saved={phase === 'done' && !error} />}
       <p className="form-error" role="alert">
-        {error}
+        {error && t(error)}
       </p>
       <button type="button" className="primary" onClick={start} disabled={phase === 'saving'}>
-        {result ? 'Run again' : 'Start test'}
+        {result ? t('pvt.runAgain') : t('pvt.start')}
       </button>
     </section>
   )
 }
 
 function PvtResultPanel({ result, saved }: { result: PvtResult; saved: boolean }) {
+  const { t } = useI18n()
   return (
     <div className="pvt-result">
       <dl className="readouts">
         <div>
-          <dt>Median reaction</dt>
+          <dt>{t('pvt.median')}</dt>
           <dd>{result.medianRtMs} ms</dd>
         </div>
         <div>
-          <dt>Lapses</dt>
+          <dt>{t('pvt.lapses')}</dt>
           <dd>{result.lapses}</dd>
         </div>
         <div>
-          <dt>False starts</dt>
+          <dt>{t('pvt.falseStarts')}</dt>
           <dd>{result.falseStarts}</dd>
         </div>
         <div>
-          <dt>Performance</dt>
+          <dt>{t('pvt.performance')}</dt>
           <dd>{Math.round(result.performance * 100)}%</dd>
         </div>
       </dl>
       <p>
         {!result.valid
-          ? `Only ${result.trials} trials: too few to interpret. Run the full test.`
+          ? t('pvt.tooFew', { n: result.trials })
           : vigilanceBelowNormal(result)
-            ? 'Vigilance below normal. Avoid critical tasks for now, rest, and repeat the test later.'
-            : 'Vigilance within the normal range.'}
+            ? t('pvt.below')
+            : t('pvt.normal')}
       </p>
-      {saved && <p className="muted small">Saved encrypted on this device.</p>}
+      {saved && <p className="muted small">{t('pvt.saved')}</p>}
     </div>
   )
 }

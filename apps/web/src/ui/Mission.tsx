@@ -1,5 +1,9 @@
 import { useId, useMemo, useState, type KeyboardEvent } from 'react'
 import type { Fetcher } from '../data/loader'
+import { environmentName, localNumber, scenarioText } from '../i18n/content'
+import { LanguageSwitch } from '../i18n/LanguageSwitch'
+import type { MessageKey } from '../i18n/messages'
+import { useI18n } from '../i18n/useI18n'
 import type { Alert } from '../domain/riskEngine'
 import { CREW } from '../sim/crew'
 import { SCENARIOS, runScenario, scenarioById } from '../sim/scenarios'
@@ -8,7 +12,6 @@ import { AssistantView } from './AssistantView'
 import { CheckInView } from './CheckInView'
 import { CrewView } from './CrewView'
 import { focusDay } from './focusDay'
-import { ENVIRONMENT_LABEL } from './labels'
 import { Brand } from './LockScreen'
 import { PrivacyView } from './PrivacyView'
 import { PvtView } from './PvtView'
@@ -24,16 +27,17 @@ interface Props {
 }
 
 const TABS = [
-  { id: 'crew', label: 'Crew' },
-  { id: 'radiation', label: 'Radiation' },
-  { id: 'checkin', label: 'Check-in' },
-  { id: 'pvt', label: 'Vigilance test' },
-  { id: 'assistant', label: 'Assistant' },
-  { id: 'privacy', label: 'Privacy and sync' },
-] as const
+  { id: 'crew', label: 'tab.crew' },
+  { id: 'radiation', label: 'tab.radiation' },
+  { id: 'checkin', label: 'tab.checkin' },
+  { id: 'pvt', label: 'tab.pvt' },
+  { id: 'assistant', label: 'tab.assistant' },
+  { id: 'privacy', label: 'tab.privacy' },
+] as const satisfies readonly { id: string; label: MessageKey }[]
 type Tab = (typeof TABS)[number]['id']
 
 export function Mission({ vault, fetcher, onLock }: Props) {
+  const { t, lang } = useI18n()
   const { model, data } = useVerifiedData(fetcher)
   const [scenarioId, setScenarioId] = useState(SCENARIOS[0]!.id)
   const scenario = scenarioById(scenarioId)
@@ -71,29 +75,28 @@ export function Mission({ vault, fetcher, onLock }: Props) {
     <div className="app">
       <header className="topbar">
         <Brand />
-        <span className="sim-badge" title="No real astronaut data is used">
-          Simulated crew data
-        </span>
+        <span className="sim-badge">{t('sim.badge')}</span>
+        <LanguageSwitch />
         <button type="button" className="ghost" onClick={onLock}>
-          Lock
+          {t('mission.lock')}
         </button>
       </header>
 
-      <section className="mission-bar" aria-label="Mission">
+      <section className="mission-bar" aria-label={t('mission.region')}>
         <div className="field">
-          <label htmlFor={ids.scenario}>Scenario</label>
+          <label htmlFor={ids.scenario}>{t('mission.scenario')}</label>
           <select id={ids.scenario} value={scenarioId} onChange={(e) => chooseScenario(e.target.value)}>
             {SCENARIOS.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.title}
+                {scenarioText(s, lang).title}
               </option>
             ))}
           </select>
-          <p className="muted small">{scenario.description}</p>
+          <p className="muted small">{scenarioText(scenario, lang).description}</p>
         </div>
         <div className="field">
           <label htmlFor={ids.day}>
-            Mission day {dayIndex + 1} of {days.length} <span className="muted">{day?.date}</span>
+            {t('mission.day', { n: dayIndex + 1, total: days.length })} <span className="muted">{day?.date}</span>
           </label>
           <input
             id={ids.day}
@@ -107,40 +110,40 @@ export function Mission({ vault, fetcher, onLock }: Props) {
         {day && (
           <dl className="readouts">
             <div>
-              <dt>Environment</dt>
-              <dd>{ENVIRONMENT_LABEL[scenario.environment]}</dd>
+              <dt>{t('mission.environment')}</dt>
+              <dd>{environmentName(scenario.environment, lang)}</dd>
             </div>
             <div>
-              <dt>Cabin CO2</dt>
-              <dd className={day.cabinCo2Mmhg > 4 ? 'high' : undefined}>{day.cabinCo2Mmhg} mmHg</dd>
+              <dt>{t('mission.co2')}</dt>
+              <dd className={day.cabinCo2Mmhg > 4 ? 'high' : undefined}>{localNumber(day.cabinCo2Mmhg, lang)} mmHg</dd>
             </div>
             <div>
-              <dt>Solar storm</dt>
+              <dt>{t('mission.storm')}</dt>
               <dd className={day.protonStormLevel > 0 ? 'high' : undefined}>
-                {day.protonStormLevel > 0 ? `S${day.protonStormLevel}` : 'None'}
+                {day.protonStormLevel > 0 ? `S${day.protonStormLevel}` : t('mission.none')}
               </dd>
             </div>
             <div>
-              <dt>Career dose</dt>
-              <dd>{day.accumulatedMsv} mSv</dd>
+              <dt>{t('mission.dose')}</dt>
+              <dd>{localNumber(day.accumulatedMsv, lang)} mSv</dd>
             </div>
           </dl>
         )}
       </section>
 
-      <div role="tablist" aria-label="Views" className="tabs" onKeyDown={onTabKey}>
-        {TABS.map((t) => (
+      <div role="tablist" aria-label={t('tabs.label')} className="tabs" onKeyDown={onTabKey}>
+        {TABS.map((item) => (
           <button
-            key={t.id}
-            id={`${ids.tabs}-${t.id}`}
+            key={item.id}
+            id={`${ids.tabs}-${item.id}`}
             type="button"
             role="tab"
-            aria-selected={tab === t.id}
-            aria-controls={`${ids.tabs}-${t.id}-panel`}
-            tabIndex={tab === t.id ? 0 : -1}
-            onClick={() => setTab(t.id)}
+            aria-selected={tab === item.id}
+            aria-controls={`${ids.tabs}-${item.id}-panel`}
+            tabIndex={tab === item.id ? 0 : -1}
+            onClick={() => setTab(item.id)}
           >
-            {t.label}
+            {t(item.label)}
           </button>
         ))}
       </div>

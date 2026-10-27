@@ -78,3 +78,21 @@ test('fits a phone screen without horizontal scrolling', async ({ page }) => {
     expect(overflow, tab).toBeLessThanOrEqual(0)
   }
 })
+
+test('works in Portuguese, accessible, and remembers the language', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: /Português/ }).click()
+  await page.getByLabel(/^PIN/).fill('480137')
+  await page.getByLabel('Repita o PIN').fill('480137')
+  await page.getByRole('button', { name: 'Criar cofre' }).click()
+  await page.getByLabel('Cenário').selectOption({ label: 'Febre no oficial médico da tripulação' })
+  await expect(page.getByRole('article', { name: 'M. Okafor' }).getByText('Padrão incomum')).toBeVisible()
+  await expectAccessible(page, 'crew (pt)')
+  await page.getByRole('tab', { name: 'Assistente' }).click()
+  await page.getByRole('button', { name: 'O que faço numa tempestade solar?' }).click()
+  await expect(page.getByText('Evento de partículas solares: ir para o abrigo').first()).toBeVisible()
+  await expectAccessible(page, 'assistant (pt)')
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Desbloquear' })).toBeVisible()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR')
+})

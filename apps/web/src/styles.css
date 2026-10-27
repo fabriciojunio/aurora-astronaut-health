@@ -228,6 +228,7 @@ label {
 .lock-bar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 1.2rem;
   padding: 1rem 0;
   border-bottom: 2px solid var(--text);
@@ -235,8 +236,8 @@ label {
 
 .lock-form {
   align-self: center;
+  justify-self: center;
   width: min(380px, 100%);
-  margin-left: clamp(0px, 12vw, 160px);
   padding: 3rem 0;
 }
 
@@ -313,13 +314,33 @@ label {
 .topbar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 1.2rem;
   padding: 1rem 0;
   border-bottom: 2px solid var(--text);
 }
 
-.topbar .ghost {
+.lang-switch {
+  display: flex;
   margin-left: auto;
+}
+
+.lang-switch button {
+  min-width: 2.6rem;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.lang-switch button + button {
+  border-left: 0;
+}
+
+.lang-switch button[aria-pressed='true'] {
+  color: var(--bg);
+  background: var(--text);
+  border-color: var(--text);
 }
 
 .sim-badge {
@@ -1053,7 +1074,6 @@ input[type='checkbox'] {
 
 @media (max-width: 860px) {
   .lock-form {
-    margin-left: 0;
     padding: 2rem 0;
   }
 

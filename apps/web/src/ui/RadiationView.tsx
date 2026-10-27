@@ -3,6 +3,8 @@ import { daysUntil, theilSen } from '../ai/forecast'
 import { EVIDENCE } from '../domain/evidence'
 import { CAREER_LIMIT_MSV, careerStatus, dailyDoses, spikeDays, type DailyDose } from '../domain/radiation'
 import type { ScenarioDay } from '../sim/scenarios'
+import type { MessageKey } from '../i18n/messages'
+import { useI18n } from '../i18n/useI18n'
 import { DailyDoseChart } from './DailyDoseChart'
 import type { Loadable, RealData } from './useVerifiedData'
 
@@ -13,10 +15,10 @@ interface Props {
 }
 
 const MEASURED = [
-  { environment: 'iss', title: 'ISS (DOSTEL)' },
-  { environment: 'lunar_orbit', title: 'Lunar orbit (CRaTER)' },
-  { environment: 'mars_surface', title: 'Mars surface (Curiosity RAD)' },
-] as const
+  { environment: 'iss', title: 'chart.iss' },
+  { environment: 'lunar_orbit', title: 'chart.moon' },
+  { environment: 'mars_surface', title: 'chart.mars' },
+] as const satisfies readonly { environment: string; title: MessageKey }[]
 
 export function RadiationView({ days, dayIndex, data }: Props) {
   return (
@@ -28,6 +30,7 @@ export function RadiationView({ days, dayIndex, data }: Props) {
 }
 
 function CareerDose({ days, dayIndex }: Omit<Props, 'data'>) {
+  const { t } = useI18n()
   const day = days[dayIndex]
   if (!day) return null
   const status = careerStatus(day.accumulatedMsv)
@@ -38,39 +41,40 @@ function CareerDose({ days, dayIndex }: Omit<Props, 'data'>) {
 
   return (
     <section className="card" aria-labelledby="career-title">
-      <h2 id="career-title">Career dose in this scenario</h2>
+      <h2 id="career-title">{t('rad.career')}</h2>
       <div className="hero-row">
         <div>
           <span className="hero-number">{day.accumulatedMsv}</span> <span className="muted">mSv</span>
-          <p className="muted small">{Math.round(percent)}% of {CAREER_LIMIT_MSV} mSv limit</p>
+          <p className="muted small">{t('rad.ofLimit', { pct: Math.round(percent), limit: CAREER_LIMIT_MSV })}</p>
         </div>
         <div>
-          <span className="hero-number">{status.remainingMsv}</span> <span className="muted">mSv left</span>
+          <span className="hero-number">{status.remainingMsv}</span> <span className="muted">{t('rad.left')}</span>
           <p className="muted small">
             {trend === undefined
-              ? 'Trend needs at least 3 days.'
+              ? t('rad.trendShort')
               : eta === undefined
-                ? `Rising ${trend.slopePerDay.toFixed(2)} mSv/day; limit not reached within a year.`
-                : `At the current trend (${trend.slopePerDay.toFixed(2)} mSv/day) the limit is reached in about ${Math.round(eta)} days.`}
+                ? t('rad.trendSlow', { rate: trend.slopePerDay.toFixed(2) })
+                : t('rad.trendEta', { rate: trend.slopePerDay.toFixed(2), days: Math.round(eta) })}
           </p>
         </div>
       </div>
       <div
         className="meter"
         role="meter"
-        aria-label="Share of the career dose limit used"
+        aria-label={t('rad.meter')}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(percent)}
       >
         <span style={{ width: `${percent}%` }} className={percent >= 80 ? 'high' : undefined} />
       </div>
-      <p className="muted small">Limit: {EVIDENCE.nasaStd3001Radiation.citation}. Trend: Theil-Sen.</p>
+      <p className="muted small">{t('rad.limitSource', { source: EVIDENCE.nasaStd3001Radiation.citation })}</p>
     </section>
   )
 }
 
 function MeasuredDoses({ data }: { data: Loadable<RealData> }) {
+  const { t } = useI18n()
   const charts = useMemo(() => {
     if (data.status !== 'ready') return []
     return MEASURED.map(({ environment, title }) => {
@@ -81,17 +85,15 @@ function MeasuredDoses({ data }: { data: Loadable<RealData> }) {
 
   return (
     <section className="card" aria-labelledby="measured-title">
-      <h2 id="measured-title">Measured in space, May 2024</h2>
-      <p className="muted small">Absorbed dose, µGy/day. Highlighted: 3× median or more. Independent scales.</p>
-      {data.status === 'loading' && <p className="muted">Checking the data files…</p>}
-      {data.status === 'error' && (
-        <p role="alert">The data files failed their integrity check, so they are not shown.</p>
-      )}
+      <h2 id="measured-title">{t('rad.measured')}</h2>
+      <p className="muted small">{t('rad.measuredNote')}</p>
+      {data.status === 'loading' && <p className="muted">{t('rad.checking')}</p>}
+      {data.status === 'error' && <p role="alert">{t('rad.failed')}</p>}
       {data.status === 'ready' && (
         <>
           <div className="charts">
             {charts.map((c) => (
-              <DailyDoseChart key={c.environment} title={c.title} days={c.doses} spikes={c.spikes} />
+              <DailyDoseChart key={c.environment} title={t(c.title)} days={c.doses} spikes={c.spikes} />
             ))}
           </div>
           <SourceLine entry={data.value.radiation.entry} />
@@ -103,18 +105,20 @@ function MeasuredDoses({ data }: { data: Loadable<RealData> }) {
 }
 
 function SourceLine({ entry }: { entry: RealData['radiation']['entry'] }) {
+  const { t } = useI18n()
   return (
     <p className="muted small source-line">
-      Source:{' '}
+      {t('rad.source')}{' '}
       <a href={entry.url} target="_blank" rel="noopener noreferrer">
         {entry.source}
       </a>
-      , retrieved {entry.retrievedAt.slice(0, 10)}. SHA-256 verified on load ({entry.sha256.slice(0, 12)}…).
+      {t('rad.retrieved', { date: entry.retrievedAt.slice(0, 10), hash: entry.sha256.slice(0, 12) })}
     </p>
   )
 }
 
 function SolarProtons({ protons }: { protons: RealData['protons'] }) {
+  const { t } = useI18n()
   const latest = protons.records.reduce<(typeof protons.records)[number] | undefined>(
     (a, r) => (!a || r.time > a.time ? r : a),
     undefined,
@@ -122,10 +126,10 @@ function SolarProtons({ protons }: { protons: RealData['protons'] }) {
   if (!latest) return null
   return (
     <div className="protons">
-      <h3 className="section-title">Solar protons at the last data update</h3>
+      <h3 className="section-title">{t('rad.protons')}</h3>
       <p>
-        GOES ≥10 MeV flux <span className="mono">{latest.flux_10mev}</span> pfu at {latest.time.slice(0, 16).replace('T', ' ')}{' '}
-        UTC: <strong>{latest.storm_level === 0 ? 'no radiation storm' : `storm level S${latest.storm_level}`}</strong>.
+        {t('rad.protonsLine', { flux: latest.flux_10mev, time: latest.time.slice(0, 16).replace('T', ' ') })}{' '}
+        <strong>{latest.storm_level === 0 ? t('rad.noStorm') : t('rad.stormLevel', { level: latest.storm_level })}</strong>.
       </p>
       <SourceLine entry={protons.entry} />
     </div>
