@@ -1,0 +1,25 @@
+[project]
+name = "aurora-data"
+version = "1.0.0"
+description = "Builds the NASA data snapshots used by AURORA"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --cov=aurora_data --cov-report=term-missing"
+
+[tool.coverage.report]
+fail_under = 85
+omit = ["aurora_data/build.py"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "S", "UP"]
+ignore = ["S101"]
+
+[tool.mypy]
+strict = true
+packages = ["aurora_data"]
