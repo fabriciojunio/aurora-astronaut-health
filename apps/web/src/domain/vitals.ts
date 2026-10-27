@@ -32,6 +32,17 @@ export const PLAUSIBLE: Record<VitalKind, readonly [number, number]> = {
   respiratoryRate: [4, 60],
 }
 
+/** Smallest meaningful change for each signal; used as the floor of the personal-baseline score. */
+export const RESOLUTION: Record<VitalKind, number> = {
+  heartRate: 1,
+  hrv: 2,
+  spo2: 0.5,
+  systolic: 2,
+  diastolic: 2,
+  temperature: 0.1,
+  respiratoryRate: 1,
+}
+
 export const vitalReadingSchema = z
   .object({
     crewId: z.string().regex(/^[a-z0-9-]{1,32}$/),

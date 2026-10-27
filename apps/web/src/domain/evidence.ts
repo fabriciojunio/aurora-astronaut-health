@@ -141,6 +141,12 @@ export const EVIDENCE = {
     finding: 'Clinical bands for respiration, SpO2, blood pressure, pulse and temperature.',
     url: 'https://www.rcp.ac.uk/improving-care/resources/national-early-warning-score-news-2/',
   },
+  modifiedZ: {
+    id: 'modifiedZ',
+    citation: 'Iglewicz & Hoaglin, How to Detect and Handle Outliers, ASQC, 1993',
+    finding: 'Modified z-score based on the median and MAD; values above 3.5 are potential outliers.',
+    url: 'https://www.itl.nist.gov/div898/handbook/eda/section3/eda35h.htm',
+  },
   eimo: {
     id: 'eimo',
     citation: 'Earth Independent Medical Operations (EIMO), PMC 10810302',
