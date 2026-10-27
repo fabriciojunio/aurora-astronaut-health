@@ -42,6 +42,8 @@ export interface Alert {
   action: string
   evidence: EvidenceId[]
   createdAt: string
+  /** The values behind the text, so the interface can word the alert in another language. */
+  params?: Record<string, string | number>
 }
 
 export interface RiskContext {
@@ -93,6 +95,7 @@ export function evaluate(ctx: RiskContext): Alert[] {
     add('news2-incomplete', {
       area: 'clinical',
       severity: 'info',
+      params: { missing: score.missing.join(',') },
       title: 'Measurements missing',
       why: `No reading in the last 24 h for: ${score.missing.join(', ')}. A missing value is never treated as normal.`,
       action: 'Take the missing measurements to complete today’s assessment.',
@@ -103,6 +106,7 @@ export function evaluate(ctx: RiskContext): Alert[] {
     add('news2', {
       area: 'clinical',
       severity,
+      params: { total: score.total, risk: score.risk, points: Object.entries(score.points).filter(([, p]) => p > 0).map(([k, p]) => `${k}:${p}`).join(','), critical: severity === 'critical' ? 1 : 0 },
       title: `Early warning score ${score.total} (${score.risk})`,
       why: `NEWS2 points: ${Object.entries(score.points).filter(([, p]) => p > 0).map(([k, p]) => `${k} +${p}`).join(', ')}.`,
       action:
@@ -126,6 +130,7 @@ export function evaluate(ctx: RiskContext): Alert[] {
     add(`baseline-${kind}`, {
       area: 'vitals',
       severity: watchOnly.includes(kind) ? 'watch' : 'warning',
+      params: { kind, direction: deviation.direction, count: deviation.count, since: deviation.since, median: baseline.median },
       title: `${VITAL_NAMES[kind]} ${deviation.direction === 'up' ? 'above' : 'below'} your personal normal`,
       why: `${deviation.count} consecutive readings since ${utcTime(deviation.since)} away from your median of ${baseline.median} ${UNITS[kind]}.`,
       action: 'Check how you feel, repeat the measurement at rest and log any symptom.',
@@ -141,6 +146,7 @@ export function evaluate(ctx: RiskContext): Alert[] {
       add('proton-storm', {
         area: 'radiation',
         severity: shielded ? 'watch' : 'critical',
+        params: { level: protonStormLevel, shielded: shielded ? 1 : 0 },
         title: `Solar radiation storm S${protonStormLevel}`,
         why: shielded
           ? 'The ISS is partly shielded by Earth’s magnetic field, but dose can still rise.'
@@ -157,6 +163,7 @@ export function evaluate(ctx: RiskContext): Alert[] {
       add('career-dose', {
         area: 'radiation',
         severity: career.exceedsCareerLimit ? 'critical' : 'warning',
+        params: { pct: Math.round(career.careerFraction * 100), msv: accumulatedMsv },
         title: `Career dose at ${Math.round(career.careerFraction * 100)}% of the NASA limit`,
         why: `${accumulatedMsv} mSv accumulated; the career limit is 600 mSv.`,
         action: 'Review exposure planning with the flight surgeon and minimise optional exposure.',
@@ -171,6 +178,7 @@ export function evaluate(ctx: RiskContext): Alert[] {
     add('sleep', {
       area: 'sleep',
       severity: sleep.averageHours < 6 ? 'warning' : 'watch',
+      params: { avg: sleep.averageHours, short: sleep.shortNights, nights: sleep.nights, debt: sleep.debtHours },
       title: `Sleep averaging ${sleep.averageHours} h`,
       why: `${sleep.shortNights} of ${sleep.nights} nights under 7 h; ${sleep.debtHours} h of debt this week.`,
       action: 'Protect the next sleep period: dim light, limit screens and avoid late exercise.',
@@ -183,6 +191,7 @@ export function evaluate(ctx: RiskContext): Alert[] {
     add('vigilance', {
       area: 'cognition',
       severity: stressors.includes('sleep debt') ? 'warning' : 'watch',
+      params: { lapses: latestPvt.result.lapses, median: latestPvt.result.medianRtMs, performance: latestPvt.result.performance },
       title: `Vigilance below normal (${latestPvt.result.lapses} lapses)`,
       why: `Median reaction ${latestPvt.result.medianRtMs} ms, performance ${latestPvt.result.performance}.`,
       action: 'Avoid critical tasks for now, rest, and repeat the 3-minute test later.',
@@ -196,6 +205,7 @@ export function evaluate(ctx: RiskContext): Alert[] {
     add('exercise', {
       area: 'musculoskeletal',
       severity: adherence.ratio < 0.3 ? 'warning' : 'watch',
+      params: { pct: Math.round(adherence.ratio * 100), done: adherence.doneMin, prescribed: adherence.prescribedMin },
       title: `Resistance exercise at ${Math.round(adherence.ratio * 100)}% of the prescription`,
       why: `${adherence.doneMin} of ${adherence.prescribedMin} min with load this week. In flight, bone can be lost at 1 to 1.5% per month.`,
       action: 'Plan the missing resistance sessions; load matters more than duration.',
@@ -208,6 +218,7 @@ export function evaluate(ctx: RiskContext): Alert[] {
     add('hydration', {
       area: 'renal',
       severity: adherence.ratio < 0.6 ? 'warning' : 'watch',
+      params: { ml: hydration, target: HYDRATION_TARGET_ML },
       title: `Hydration averaging ${hydration} ml/day`,
       why: 'Bone loss raises calcium in the urine; low fluid intake adds kidney stone risk, which cannot be treated in flight.',
       action: `Drink enough to reach about ${HYDRATION_TARGET_ML} ml per day.`,
@@ -221,6 +232,7 @@ export function evaluate(ctx: RiskContext): Alert[] {
     add('co2', {
       area: 'environment',
       severity: symptoms.has('headache') ? 'warning' : 'watch',
+      params: { mmhg: ctx.cabin.co2Mmhg, odds },
       title: `Cabin CO2 at ${ctx.cabin.co2Mmhg} mmHg`,
       why: `On the ISS each 1 mmHg doubled the odds of headache: about ${odds}x the odds at the 4 mmHg target.`,
       action: 'Report to the crew; check air flow near your work area and take breaks in better-ventilated modules.',
@@ -278,6 +290,7 @@ export function evaluate(ctx: RiskContext): Alert[] {
     add('sensorimotor', {
       area: 'sensorimotor',
       severity: ctx.sensorimotor === 'not-ready' ? 'warning' : 'watch',
+      params: { readiness: ctx.sensorimotor },
       title: `Balance and mobility: ${ctx.sensorimotor}`,
       why: 'After long missions the field tasks took 48% longer one day after landing.',
       action: 'Do not perform egress or EVA tasks alone; repeat the field tests after rest.',
@@ -291,6 +304,7 @@ export function evaluate(ctx: RiskContext): Alert[] {
     add('combined', {
       area: 'combined',
       severity: raise(worst === 'critical' ? 'warning' : worst),
+      params: { count: stressors.length, stressors: stressors.join(',') },
       title: `${stressors.length} stressors at the same time`,
       why: `Active together: ${stressors.join(', ')}. Spaceflight hazards interact and can worsen each other.`,
       action: 'Treat the most severe item first and lighten the workload until these improve.',
