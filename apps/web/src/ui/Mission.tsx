@@ -1,11 +1,14 @@
 import { useId, useMemo, useState, type KeyboardEvent } from 'react'
 import type { Fetcher } from '../data/loader'
+import { CREW } from '../sim/crew'
 import { SCENARIOS, runScenario, scenarioById } from '../sim/scenarios'
 import type { Vault } from '../storage/vault'
+import { CheckInView } from './CheckInView'
 import { CrewView } from './CrewView'
 import { focusDay } from './focusDay'
 import { ENVIRONMENT_LABEL } from './labels'
 import { Brand } from './LockScreen'
+import { PvtView } from './PvtView'
 import { RadiationView } from './RadiationView'
 import { useIdleLock } from './useIdleLock'
 import { useVerifiedData } from './useVerifiedData'
@@ -19,16 +22,19 @@ interface Props {
 const TABS = [
   { id: 'crew', label: 'Crew' },
   { id: 'radiation', label: 'Radiation' },
+  { id: 'checkin', label: 'Check-in' },
+  { id: 'pvt', label: 'Vigilance test' },
 ] as const
 type Tab = (typeof TABS)[number]['id']
 
-export function Mission({ fetcher, onLock }: Props) {
+export function Mission({ vault, fetcher, onLock }: Props) {
   const { model, data } = useVerifiedData(fetcher)
   const [scenarioId, setScenarioId] = useState(SCENARIOS[0]!.id)
   const scenario = scenarioById(scenarioId)
   const days = useMemo(() => runScenario(scenarioById(scenarioId)), [scenarioId])
   const [dayIndex, setDayIndex] = useState(() => focusDay(scenario))
   const [tab, setTab] = useState<Tab>('crew')
+  const [recorder, setRecorder] = useState(CREW[0]!.id)
   const ids = { scenario: useId(), day: useId(), tabs: useId() }
   const day = days[dayIndex]
 
@@ -129,6 +135,8 @@ export function Mission({ fetcher, onLock }: Props) {
       <main id={`${ids.tabs}-${tab}-panel`} role="tabpanel" aria-labelledby={`${ids.tabs}-${tab}`} className="panel">
         {tab === 'crew' && <CrewView days={days} dayIndex={dayIndex} model={model} />}
         {tab === 'radiation' && <RadiationView scenario={scenario} days={days} dayIndex={dayIndex} data={data} />}
+        {tab === 'checkin' && <CheckInView vault={vault} crewId={recorder} onCrewChange={setRecorder} />}
+        {tab === 'pvt' && <PvtView vault={vault} crewId={recorder} onCrewChange={setRecorder} />}
       </main>
     </div>
   )
