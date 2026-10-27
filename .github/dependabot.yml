@@ -1,21 +1,27 @@
 version: 2
 updates:
-  # Ajuste ou remova os ecossistemas que o projeto não usa.
+  # Versões novas só são propostas depois de 7 dias, quando um pacote comprometido costuma já ter sido retirado.
   - package-ecosystem: "npm"
-    directory: "/"
+    directory: "/apps/web"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "build(deps)"
   - package-ecosystem: "pip"
-    directory: "/"
+    directories: ["/data", "/ml"]
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "build(deps)"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "ci(deps)"
