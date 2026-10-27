@@ -141,6 +141,12 @@ export const EVIDENCE = {
     finding: 'Clinical bands for respiration, SpO2, blood pressure, pulse and temperature.',
     url: 'https://www.rcp.ac.uk/improving-care/resources/national-early-warning-score-news-2/',
   },
+  hrpHazards: {
+    id: 'hrpHazards',
+    citation: 'NASA Human Research Program, the five hazards of human spaceflight',
+    finding: 'Radiation, isolation, distance, gravity and hostile environments interact and can worsen each other.',
+    url: 'https://www.nasa.gov/hrp/hazards',
+  },
   pvtBrief: {
     id: 'pvtBrief',
     citation: 'Basner, Mollicone & Dinges, Acta Astronautica, 2011 (3-minute PVT-B)',
