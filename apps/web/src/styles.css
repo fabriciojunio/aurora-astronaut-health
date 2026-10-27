@@ -477,6 +477,12 @@ label {
   padding-left: 1.1rem;
 }
 
+/* WCAG 2.5.8: stacked links need at least 24px of target each. */
+.sources a {
+  display: inline-block;
+  padding: 0.25rem 0;
+}
+
 @media (max-width: 720px) {
   .mission-bar {
     grid-template-columns: 1fr;

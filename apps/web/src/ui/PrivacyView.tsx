@@ -71,11 +71,19 @@ export function PrivacyView({ vault, crewId, onCrewChange, environment, link }: 
 
   async function toggle(audience: Audience, category: DataCategory, allowed: boolean) {
     if (!consent) return
+    const previous = consent
     const next = setConsent(consent, audience, category, allowed)
-    await vault.put('settings', consentId(crewId), next)
-    await appendAudit(vault, { actor: crewId, action: 'consent.changed', detail: { audience, category, allowed } })
-    setVerification(null)
+    // The box changes at once; if the encrypted save fails it goes back, so the screen never claims
+    // a permission that was not stored.
     setConsentState(next)
+    setVerification(null)
+    try {
+      await vault.put('settings', consentId(crewId), next)
+      await appendAudit(vault, { actor: crewId, action: 'consent.changed', detail: { audience, category, allowed } })
+    } catch {
+      setConsentState(previous)
+      setMessage('The change could not be saved. Nothing was shared.')
+    }
   }
 
   async function send(tamper: boolean) {
