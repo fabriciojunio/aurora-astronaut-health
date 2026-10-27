@@ -141,6 +141,24 @@ export const EVIDENCE = {
     finding: 'Clinical bands for respiration, SpO2, blood pressure, pulse and temperature.',
     url: 'https://www.rcp.ac.uk/improving-care/resources/national-early-warning-score-news-2/',
   },
+  pvtBrief: {
+    id: 'pvtBrief',
+    citation: 'Basner, Mollicone & Dinges, Acta Astronautica, 2011 (3-minute PVT-B)',
+    finding: 'The brief 3-minute PVT uses 2 to 5 s intervals and counts reactions of 355 ms or more as lapses.',
+    url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC3197786/',
+  },
+  sleepNeed: {
+    id: 'sleepNeed',
+    citation: 'Watson et al., Sleep, 2015 (AASM and SRS consensus)',
+    finding: 'Adults should sleep 7 hours or more per night on a regular basis.',
+    url: 'https://jcsm.aasm.org/doi/10.5664/jcsm.4758',
+  },
+  stoneFluids: {
+    id: 'stoneFluids',
+    citation: 'Pearle et al., AUA Guideline on Medical Management of Kidney Stones, 2014',
+    finding: 'Fluid intake should achieve a urine volume of at least 2.5 litres per day.',
+    url: 'https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline',
+  },
   modifiedZ: {
     id: 'modifiedZ',
     citation: 'Iglewicz & Hoaglin, How to Detect and Handle Outliers, ASQC, 1993',
