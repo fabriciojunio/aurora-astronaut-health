@@ -2,12 +2,13 @@
 //
 //   npx tsx scripts/export-training-data.ts ../../ml/data/dataset.json
 //
-// Healthy days come from the simulated crew with many seeds. Anomalies are injected with the
+// Healthy days come from the simulated crew with many seeds and many baseline draws. Anomalies are injected with the
 // physiological patterns described in the literature (hypoxia, fever, tachycardia, orthostatic
 // drop). All data is simulated and labelled as such.
 
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
+import { BASELINE_DAYS } from '../src/ai/anomalyMonitor'
 import { FEATURES, featureVector, personalBaselines, snapshotsByTime } from '../src/ai/features'
 import type { VitalKind, VitalReading } from '../src/domain/vitals'
 import { CREW, randomFor, simulateDay } from '../src/sim/crew'
@@ -30,38 +31,46 @@ const ANOMALIES: Record<string, Partial<Record<VitalKind, number>>> = {
 }
 
 const START = Date.UTC(2026, 0, 1)
-const BASELINE_DAYS = 5
-const rows: { split: string; crewId: string; kind: string; x: number[]; label: number }[] = []
+const DAY = 86_400_000
+// A personal normal built from only five days varies from draw to draw. Each split uses many
+// different baseline draws (never shared between splits) so the threshold reflects that variation.
+const SPLITS = [
+  { split: 'train', baselines: 30, healthyDays: 4 },
+  { split: 'validation', baselines: 10, healthyDays: 4 },
+  { split: 'test', baselines: 10, healthyDays: 4 },
+] as const
+const rows: { split: string; crewId: string; kind: string; day: string; x: number[]; label: number }[] = []
 
 for (const profile of CREW) {
-  const history: VitalReading[] = []
-  for (let day = 0; day < BASELINE_DAYS; day++) {
-    history.push(...simulateDay(profile, new Date(START + day * 86_400_000), {}, randomFor(profile.id, day, 1)).vitals)
-  }
-  const baselines = personalBaselines(history)
-  if (!baselines) throw new Error(`no baseline for ${profile.id}`)
+  SPLITS.forEach(({ split, baselines: count, healthyDays }, splitIndex) => {
+    for (let b = 0; b < count; b++) {
+      const baselineSeed = 10_000 + splitIndex * 1_000 + b
+      const history: VitalReading[] = []
+      for (let day = 0; day < BASELINE_DAYS; day++) {
+        history.push(...simulateDay(profile, new Date(START + day * DAY), {}, randomFor(profile.id, day, baselineSeed)).vitals)
+      }
+      const baselines = personalBaselines(history)
+      if (!baselines) throw new Error(`no baseline for ${profile.id}`)
 
-  const emit = (split: string, kind: string, label: number, readings: VitalReading[]) => {
-    for (const snap of snapshotsByTime(readings).values()) {
-      const x = featureVector(snap, baselines)
-      if (x) rows.push({ split, crewId: profile.id, kind, x, label })
-    }
-  }
+      const emit = (kind: string, label: number, day: number, readings: VitalReading[]) => {
+        for (const snap of snapshotsByTime(readings).values()) {
+          const x = featureVector(snap, baselines)
+          if (x) rows.push({ split, crewId: profile.id, kind, day: `${profile.id}/${baselineSeed}/${kind}/${day}`, x, label })
+        }
+      }
 
-  // Healthy days: training (seed 100), validation (seed 200) and test (seed 300) never overlap.
-  for (const [split, seed] of [['train', 100], ['validation', 200], ['test', 300]] as const) {
-    const days = split === 'train' ? 120 : 40
-    for (let day = 0; day < days; day++) {
-      const date = new Date(START + (BASELINE_DAYS + day) * 86_400_000)
-      emit(split, 'healthy', 0, simulateDay(profile, date, {}, randomFor(profile.id, day, seed)).vitals)
+      const daySeed = 20_000 + splitIndex * 1_000 + b
+      for (let day = 0; day < healthyDays; day++) {
+        const date = new Date(START + (BASELINE_DAYS + day) * DAY)
+        emit('healthy', 0, day, simulateDay(profile, date, {}, randomFor(profile.id, day, daySeed)).vitals)
+      }
+      if (split !== 'test') continue
+      for (const [name, shift] of Object.entries(ANOMALIES)) {
+        const date = new Date(START + 200 * DAY)
+        emit(name, 1, 0, simulateDay(profile, date, { vitalShift: shift }, randomFor(profile.id, 0, 30_000 + b)).vitals)
+      }
     }
-  }
-  for (const [name, shift] of Object.entries(ANOMALIES)) {
-    for (let day = 0; day < 10; day++) {
-      const date = new Date(START + (200 + day) * 86_400_000)
-      emit('test', name, 1, simulateDay(profile, date, { vitalShift: shift }, randomFor(profile.id, day, 400)).vitals)
-    }
-  }
+  })
 }
 
 mkdirSync(dirname(out), { recursive: true })

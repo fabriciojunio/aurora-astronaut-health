@@ -4,7 +4,8 @@
 
 The model is an Isolation Forest trained only on healthy days (novelty detection). Its trees are
 exported as plain JSON and scored in TypeScript, so the app needs no AI runtime and works offline.
-The alarm threshold is the 99th percentile of healthy validation scores: about 1% false alarms.
+The alarm threshold is the 99th percentile of healthy validation scores: about 1% false alarms
+per reading. A day is flagged when at least two of its readings are anomalous.
 """
 
 from __future__ import annotations
@@ -21,6 +22,8 @@ SEED = 42
 N_ESTIMATORS = 100
 MAX_SAMPLES = 256
 TARGET_FALSE_ALARM = 0.01
+# The app flags a day only when at least this many readings of that day are anomalous.
+MIN_ANOMALOUS_READINGS = 2
 
 
 def load(path: Path) -> tuple[list[str], list[dict[str, Any]]]:
@@ -43,6 +46,20 @@ def export_tree(estimator: Any) -> dict[str, list[float] | list[int]]:
         "threshold": [float(t) for t in tree.threshold],
         "samples": tree.n_node_samples.tolist(),
     }
+
+
+def day_metrics(rows: list[dict[str, Any]], flagged: np.ndarray) -> dict[str, Any]:
+    """Applies the app's day rule and reports, per kind, the share of days flagged."""
+    days: dict[str, dict[str, Any]] = {}
+    for row, hit in zip(rows, flagged, strict=True):
+        day = days.setdefault(row["day"], {"kind": row["kind"], "hits": 0})
+        day["hits"] += int(hit)
+    result: dict[str, Any] = {}
+    for kind in sorted({d["kind"] for d in days.values()}):
+        of_kind = [d for d in days.values() if d["kind"] == kind]
+        rate = sum(d["hits"] >= MIN_ANOMALOUS_READINGS for d in of_kind) / len(of_kind)
+        result[kind] = {"flaggedRate": round(rate, 4), "days": len(of_kind)}
+    return result
 
 
 def train(dataset: Path) -> dict[str, Any]:
@@ -69,6 +86,7 @@ def train(dataset: Path) -> dict[str, Any]:
     anomalous = np.array([r["label"] == 1 for r in test])
     metrics["overallDetectionRate"] = round(float(flagged[anomalous].mean()), 4)
     metrics["falseAlarmRate"] = round(float(flagged[~anomalous].mean()), 4)
+    metrics["byDay"] = day_metrics(test, flagged)
 
     parity = [
         {"x": r["x"], "score": float(s)} for r, s in zip(test[:: max(len(test) // 60, 1)], test_scores[:: max(len(test) // 60, 1)], strict=True)

@@ -31,6 +31,24 @@ def test_strong_anomalies_are_detected(result: dict) -> None:
         assert by_kind[kind]["detectionRate"] >= 0.95, kind
 
 
+def test_no_healthy_day_is_flagged_with_the_two_reading_rule(result: dict) -> None:
+    assert result["model"]["metrics"]["byDay"]["healthy"]["flaggedRate"] <= 0.01
+
+
+def test_strong_anomalies_flag_every_day(result: dict) -> None:
+    by_day = result["model"]["metrics"]["byDay"]
+    for kind in ("hypoxia", "fever", "tachycardia", "orthostatic", "hypertension"):
+        assert by_day[kind]["flaggedRate"] == 1.0, kind
+
+
+def test_baselines_never_repeat_across_splits() -> None:
+    _, rows = train.load(DATASET)
+    seeds = {s: {r["day"].split("/")[1] for r in rows if r["split"] == s} for s in ("train", "validation", "test")}
+    assert not seeds["train"] & seeds["validation"]
+    assert not seeds["train"] & seeds["test"]
+    assert not seeds["validation"] & seeds["test"]
+
+
 def test_exports_a_complete_tree_structure(result: dict) -> None:
     model = result["model"]
     assert model["kind"] == "isolation-forest"

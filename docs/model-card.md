@@ -25,32 +25,47 @@ Simulated only. Real astronaut records are privacy-protected, so the model is tr
 days of three simulated crew members built from published adult ranges, each with their own
 normal. See [data-card.md](data-card.md). Training uses healthy days only (novelty detection).
 
-## Threshold
+The personal normal is built from the first five mission days (20 readings), and a normal built
+from so few readings varies from one draw to another. Each crew member therefore gets 30 baseline
+draws for training, 10 for validation and 10 for testing, never shared between splits.
 
-The 99th percentile of anomaly scores on a separate healthy validation set, so about 1% false
-alarms by design. Threshold: 0.5748.
+## Threshold and day rule
+
+The threshold is the 99th percentile of anomaly scores on the healthy validation set, so about 1%
+of single readings cross it by design. Threshold: 0.5888. A day is flagged only when at least two
+of its four readings cross it, because one odd reading is more often noise than illness.
 
 ## Results on the held-out test set
 
-| Pattern | Samples | Detection rate |
+| Pattern | Readings flagged | Days flagged (2 or more readings) |
 |---|---|---|
-| Healthy (false alarms) | 480 | 0.83% flagged |
-| Hypoxia | 120 | 100% |
-| Fever | 120 | 100% |
-| Tachycardia | 120 | 100% |
-| Orthostatic drop | 120 | 100% |
-| Hypertension | 120 | 100% |
-| Mild hypoxia (half intensity) | 120 | 90.8% |
-| Mild tachycardia | 120 | 87.5% |
-| Mild fever | 120 | 86.7% |
-| Mild orthostatic drop | 120 | 63.3% |
-| Mild hypertension | 120 | 30.0% |
+| Healthy (false alarms) | 0.21% of 480 | 0% of 120 |
+| Hypoxia | 100% | 100% of 30 |
+| Fever | 100% | 100% |
+| Tachycardia | 100% | 100% |
+| Orthostatic drop | 100% | 100% |
+| Hypertension | 98.3% | 100% |
+| Mild hypoxia (half intensity) | 57.5% | 76.7% |
+| Mild tachycardia | 58.3% | 70.0% |
+| Mild fever | 62.5% | 66.7% |
+| Mild orthostatic drop | 35.0% | 36.7% |
+| Mild hypertension | 19.2% | 16.7% |
 
-Overall detection across all anomalous samples: 85.8%.
+Across the seven mission scenarios of the simulator (21 days, three crew members), the only days
+flagged are days 12 to 15 of the fever scenario for the crew member who has the fever. No healthy
+crew member is flagged on any day (`anomalyMonitor.test.ts`).
 
-The first version, without the two aggregate features, detected only 36% of tachycardia and
-33% of hypertension. Adding them fixed the strong cases; mild single-signal changes remain the
-weak spot.
+### What changed from the first version
+
+The first version used one baseline draw per crew member and reported 0.83% false alarms and
+higher detection of mild changes. Running it over whole missions showed that this was optimistic:
+with a different baseline draw, healthy crew members were flagged on up to half of the days.
+Training and validating on many baseline draws gave a realistic threshold, and the two-reading day
+rule removed the remaining false days. Detection of mild changes went down, and those numbers are
+the honest ones. Strong changes are still caught on every day.
+
+Before that, a version without the two aggregate features detected only 36% of tachycardia and
+33% of hypertension readings; adding them fixed the strong cases.
 
 ## How it is used
 
@@ -67,7 +82,8 @@ weak spot.
 - Trained and evaluated on simulated data. Real-world accuracy is unknown and would need
   validation with real crew data under medical supervision.
 - Anomalies were injected as fixed shifts; real illness evolves gradually and may look different.
-- Mild changes in a single signal are often missed (see the table above).
+- Mild changes are often missed, especially in blood pressure (see the table above). Clinical
+  rules and the per-signal personal baseline cover part of that gap.
 - Not a medical device. Not for clinical decisions.
 
 ## Intended and prohibited use
