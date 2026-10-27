@@ -1,18 +1,24 @@
-# Política de Segurança
+# Security policy
 
-## Como reportar uma vulnerabilidade
+## Reporting a vulnerability
 
-Não abra issue pública. Envie os detalhes para **camilaapereira.r@gmail.com** ou use o
-recurso **"Report a vulnerability"** (Security Advisories) deste repositório.
+Please do not open a public issue. Use **Report a vulnerability** under the repository's
+**Security** tab (GitHub private vulnerability reporting). It reaches the maintainers privately.
 
-Inclua: descrição, passos para reproduzir, impacto estimado e, se possível, sugestão de correção.
+Include what you found, how to reproduce it, and what an attacker could do with it. A proof of
+concept helps; please do not access data that is not yours or degrade the public demo.
 
-## Prazos
+We will confirm receipt within 3 working days and give a first assessment within 7.
 
-- Confirmação de recebimento: até 3 dias úteis.
-- Avaliação inicial: até 7 dias úteis.
-- Correção de falhas críticas: prioridade máxima.
+## Scope
 
-## Versões suportadas
+In scope: the web app in `apps/web`, the data pipeline in `data`, the model pipeline in `ml`, and the
+deployed demo. The demo holds no real health data: every record you see is simulated, and anything
+you type stays encrypted in your own browser.
 
-Apenas a versão mais recente da branch `main` recebe correções de segurança.
+The threat model, with the controls and the risks we accept, is in
+[docs/threat-model.md](docs/threat-model.md).
+
+## Supported versions
+
+Only the latest commit on `main` receives fixes.

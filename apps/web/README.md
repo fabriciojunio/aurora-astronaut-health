@@ -1,32 +1,30 @@
-# React + TypeScript + Vite
+# AURORA web app
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The crew-facing app. See the [project README](../../README.md) for what it does and why.
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm ci
+npm run dev            # development server
+npm run build          # production build in dist/, including sw.js
+npm run preview        # serves dist/ with the production security headers
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+```bash
+npm run lint
+npm run typecheck      # app, build scripts and end-to-end tests
+npm test
+npm run test:coverage
+npm run test:e2e       # builds, serves and runs Playwright in Chromium
+```
+
+| Folder | Contents |
+|---|---|
+| `src/domain` | Rules with no framework code: vitals and NEWS2, baselines, radiation, sleep, PVT, consent, procedures, evidence |
+| `src/ai` | Isolation Forest scoring, per-day anomaly monitor, Theil-Sen forecast, BM25 assistant |
+| `src/security`, `src/storage` | WebCrypto helpers, encrypted vault, signed audit trail |
+| `src/sync` | Signed batches to the ground, consent filtering, idempotent apply |
+| `src/data` | Loader that checks SHA-256 and schema before using any snapshot |
+| `src/sim` | Simulated crew and scenarios (seeded, reproducible) |
+| `src/ui` | React screens |
+| `e2e` | Playwright tests against the production build |
+| `scripts` | Training-data export and the service worker build step |
