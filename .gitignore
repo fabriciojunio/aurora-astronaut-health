@@ -42,3 +42,8 @@ logs/
 # Ambientes Python dos subprojetos
 data/.venv/
 ml/.venv/
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
