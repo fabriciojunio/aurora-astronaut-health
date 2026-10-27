@@ -10,8 +10,10 @@ import { CrewView } from './CrewView'
 import { focusDay } from './focusDay'
 import { ENVIRONMENT_LABEL } from './labels'
 import { Brand } from './LockScreen'
+import { PrivacyView } from './PrivacyView'
 import { PvtView } from './PvtView'
 import { RadiationView } from './RadiationView'
+import { useGroundLink } from './useGroundLink'
 import { useIdleLock } from './useIdleLock'
 import { useVerifiedData } from './useVerifiedData'
 
@@ -27,6 +29,7 @@ const TABS = [
   { id: 'checkin', label: 'Check-in' },
   { id: 'pvt', label: 'Vigilance test' },
   { id: 'assistant', label: 'Assistant' },
+  { id: 'privacy', label: 'Privacy and sync' },
 ] as const
 type Tab = (typeof TABS)[number]['id']
 
@@ -39,6 +42,7 @@ export function Mission({ vault, fetcher, onLock }: Props) {
   const [tab, setTab] = useState<Tab>('crew')
   const [recorder, setRecorder] = useState(CREW[0]!.id)
   const [askAbout, setAskAbout] = useState<Alert | null>(null)
+  const link = useGroundLink(vault.signingKeys.publicKey)
   const ids = { scenario: useId(), day: useId(), tabs: useId() }
   const day = days[dayIndex]
 
@@ -147,6 +151,15 @@ export function Mission({ vault, fetcher, onLock }: Props) {
         {tab === 'checkin' && <CheckInView vault={vault} crewId={recorder} onCrewChange={setRecorder} />}
         {tab === 'pvt' && <PvtView vault={vault} crewId={recorder} onCrewChange={setRecorder} />}
         {tab === 'assistant' && <AssistantView alert={askAbout} onClearAlert={() => setAskAbout(null)} />}
+        {tab === 'privacy' && (
+          <PrivacyView
+            vault={vault}
+            crewId={recorder}
+            onCrewChange={setRecorder}
+            environment={scenario.environment}
+            link={link}
+          />
+        )}
       </main>
     </div>
   )

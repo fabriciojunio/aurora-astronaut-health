@@ -831,3 +831,60 @@ input[type='checkbox'] {
 .steps li {
   margin: 0.2rem 0;
 }
+
+/* Privacy and sync */
+
+.consent,
+.audit {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.8rem;
+  font-size: 0.88rem;
+}
+
+.consent th,
+.consent td,
+.audit th,
+.audit td {
+  text-align: left;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.consent td {
+  text-align: center;
+}
+
+.consent thead th:not(:first-child) {
+  text-align: center;
+}
+
+.audit td {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.field.inline {
+  max-width: 280px;
+}
+
+.plain {
+  list-style: none;
+  padding: 0;
+  margin: 0.2rem 0 0.4rem;
+}
+
+.ok-text {
+  color: var(--ok);
+}
+
+.bad-text {
+  color: var(--critical);
+}
