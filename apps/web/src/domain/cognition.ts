@@ -25,12 +25,12 @@ export interface PvtResult {
 }
 
 /** Random inter-stimulus intervals for one test; `random` is injectable so tests are deterministic. */
-export function scheduleIntervals(random: () => number = Math.random): number[] {
+export function scheduleIntervals(random: () => number = Math.random, durationMs = PVT_DURATION_MS): number[] {
   const intervals: number[] = []
   let elapsed = 0
   for (;;) {
     const isi = PVT_MIN_ISI_MS + Math.floor(random() * (PVT_MAX_ISI_MS - PVT_MIN_ISI_MS + 1))
-    if (elapsed + isi > PVT_DURATION_MS) return intervals
+    if (elapsed + isi > durationMs) return intervals
     intervals.push(isi)
     elapsed += isi
   }
@@ -54,4 +54,9 @@ export function scorePvt(responses: readonly PvtResponse[]): PvtResult {
     // A test with very few trials (interrupted, or the user walked away) is not interpreted.
     valid: trials >= 20,
   }
+}
+
+/** Vigilance alert threshold, shared by the risk engine and the test screen. */
+export function vigilanceBelowNormal(result: PvtResult): boolean {
+  return result.valid && (result.lapses >= 5 || result.performance < 0.85)
 }

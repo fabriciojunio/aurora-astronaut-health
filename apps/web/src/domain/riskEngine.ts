@@ -1,6 +1,6 @@
 import { computeBaseline, sustainedDeviation } from './baseline'
 import { lastDays, type CheckIn, type Symptom } from './checkin'
-import type { PvtResult } from './cognition'
+import { vigilanceBelowNormal, type PvtResult } from './cognition'
 import type { EvidenceId } from './evidence'
 import { careerStatus, type RadiationEnvironment } from './radiation'
 import type { Readiness } from './sensorimotor'
@@ -169,7 +169,7 @@ export function evaluate(ctx: RiskContext): Alert[] {
     stressors.push('sleep debt')
   }
   const latestPvt = [...ctx.pvt].filter((p) => p.result.valid).sort((a, b) => b.at.localeCompare(a.at))[0]
-  if (latestPvt && (latestPvt.result.lapses >= 5 || latestPvt.result.performance < 0.85)) {
+  if (latestPvt && vigilanceBelowNormal(latestPvt.result)) {
     add('vigilance', {
       area: 'cognition',
       severity: stressors.includes('sleep debt') ? 'warning' : 'watch',

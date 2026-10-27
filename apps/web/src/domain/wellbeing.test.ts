@@ -136,6 +136,11 @@ describe('PVT-B', () => {
     expect(scheduleIntervals(fixed)).toEqual(scheduleIntervals(fixed))
   })
 
+  it('fits a shorter practice run in the requested time', () => {
+    const intervals = scheduleIntervals(() => 0.5, 30_000)
+    expect(intervals).toEqual(Array(8).fill(3_500))
+  })
+
   it('counts lapses at 355 ms and false starts under 100 ms or without stimulus', () => {
     const responses = [
       ...Array(18).fill({ reactionMs: 250 }),
