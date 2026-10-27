@@ -38,3 +38,7 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Ambientes Python dos subprojetos
+data/.venv/
+ml/.venv/
