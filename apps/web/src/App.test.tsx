@@ -199,3 +199,62 @@ describe('Portuguese version', () => {
   })
 })
 
+describe('real use', () => {
+  async function typeVitals(user: ReturnType<typeof userEvent.setup>, values: Record<string, string>) {
+    for (const [label, value] of Object.entries(values)) {
+      const input = screen.getByLabelText(new RegExp(`^${label}`))
+      await user.clear(input)
+      await user.type(input, value)
+    }
+  }
+
+  it('records the user’s own vital signs and flags a fever once the normal is learned', async () => {
+    const { user } = renderApp()
+    await createVault(user)
+    await user.click(screen.getByRole('button', { name: 'My mission' }))
+    expect(screen.getByRole('tab', { name: 'My health' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByText('Real use')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Save readings' }))
+    expect(await screen.findByText(/Check the highlighted values/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Heart rate/)).toHaveAttribute('aria-invalid', 'true')
+
+    await user.click(screen.getByRole('button', { name: 'Load 5 days of simulated history' }))
+    expect(await screen.findByText('20 simulated readings loaded.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Fill with my usual values' }))
+    await typeVitals(user, { 'Heart rate': '80', Temperature: '38.6', 'Respiratory rate': '20' })
+    await user.click(screen.getByRole('button', { name: 'Save readings' }))
+    expect(await screen.findByText('One reading is unusual for this person. Measure again to confirm.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Fill with my usual values' }))
+    await typeVitals(user, { 'Heart rate': '82', Temperature: '38,7', 'Respiratory rate': '21' })
+    await user.click(screen.getByRole('button', { name: 'Save readings' }))
+
+    const card = screen.getByRole('article', { name: 'A. Rivera' })
+    expect(await within(card).findByText('Unusual pattern')).toBeInTheDocument()
+    expect(within(card).getByRole('list', { name: 'Signals furthest from normal' })).toHaveTextContent('Temperature')
+
+    // The temperature rule waits for three readings in a row, so one bad measurement never alarms.
+    await user.click(screen.getByRole('button', { name: 'Fill with my usual values' }))
+    await typeVitals(user, { 'Heart rate': '84', Temperature: '38.8', 'Respiratory rate': '21' })
+    await user.click(screen.getByRole('button', { name: 'Save readings' }))
+    expect(await within(card).findByText('Temperature above your personal normal')).toBeInTheDocument()
+
+    const alert = within(card).getByText('Temperature above your personal normal').closest('li')!
+    await user.click(within(alert).getByRole('button', { name: 'Ask the assistant about this alert' }))
+    await user.click(screen.getByRole('button', { name: 'Why did I get this alert?' }))
+    expect(screen.getByText('About this alert')).toBeInTheDocument()
+  }, 30_000)
+
+  it('runs the system check from the app', async () => {
+    const { user } = renderApp()
+    await createVault(user)
+    await user.click(screen.getByRole('tab', { name: 'System check' }))
+    await user.click(screen.getByRole('button', { name: 'Run the checks' }))
+    const list = await screen.findByRole('list', { name: 'System check' }, { timeout: 15_000 })
+    expect(within(list).getAllByText('Pass')).toHaveLength(6)
+    expect(within(list).getByText(/files matched their SHA-256/)).toBeInTheDocument()
+  }, 30_000)
+})
+

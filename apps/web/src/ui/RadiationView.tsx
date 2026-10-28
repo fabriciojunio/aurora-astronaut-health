@@ -9,7 +9,8 @@ import { DailyDoseChart } from './DailyDoseChart'
 import type { Loadable, RealData } from './useVerifiedData'
 
 interface Props {
-  days: readonly ScenarioDay[]
+  /** The simulated mission's days; in real use there is no dose history, so only the measurements show. */
+  days?: readonly ScenarioDay[]
   dayIndex: number
   data: Loadable<RealData>
 }
@@ -23,13 +24,13 @@ const MEASURED = [
 export function RadiationView({ days, dayIndex, data }: Props) {
   return (
     <div className="stack">
-      <CareerDose days={days} dayIndex={dayIndex} />
+      {days && <CareerDose days={days} dayIndex={dayIndex} />}
       <MeasuredDoses data={data} />
     </div>
   )
 }
 
-function CareerDose({ days, dayIndex }: Omit<Props, 'data'>) {
+function CareerDose({ days, dayIndex }: { days: readonly ScenarioDay[]; dayIndex: number }) {
   const { t } = useI18n()
   const day = days[dayIndex]
   if (!day) return null

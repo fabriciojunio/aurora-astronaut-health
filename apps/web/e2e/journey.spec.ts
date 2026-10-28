@@ -96,3 +96,41 @@ test('works in Portuguese, accessible, and remembers the language', async ({ pag
   await expect(page.getByRole('heading', { name: 'Desbloquear' })).toBeVisible()
   await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR')
 })
+
+test('real use: own readings, a fever flagged, all in an accessible screen', async ({ page }) => {
+  await createVault(page)
+  await page.getByRole('button', { name: 'My mission' }).click()
+  await page.getByRole('button', { name: 'Load 5 days of simulated history' }).click()
+  await expect(page.getByText('20 simulated readings loaded.')).toBeVisible()
+  for (const [hr, temp] of [['80', '38.6'], ['82', '38.7'], ['84', '38.8']]) {
+    await page.getByRole('button', { name: 'Fill with my usual values' }).click()
+    await page.getByLabel(/^Heart rate/).fill(hr!)
+    await page.getByLabel(/^Temperature/).fill(temp!)
+    await page.getByLabel(/^Respiratory rate/).fill('21')
+    await page.getByRole('button', { name: 'Save readings' }).click()
+    await expect(page.getByText('Readings saved encrypted on this device.')).toBeVisible()
+  }
+  const card = page.getByRole('article', { name: 'A. Rivera' })
+  await expect(card.getByText('Unusual pattern')).toBeVisible()
+  await expect(card.getByText('Temperature above your personal normal')).toBeVisible()
+  await expectAccessible(page, 'my health')
+})
+
+// Not using the console-error fixture: proving the CSP means asking the browser to run eval and
+// write raw HTML, and the browser reports both refusals in the console.
+test('system check passes every item on the production build', async ({ page }) => {
+  await createVault(page)
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready
+  })
+  await page.reload()
+  await unlock(page)
+  await page.getByRole('tab', { name: 'System check' }).click()
+  await page.getByRole('button', { name: 'Run the checks' }).click()
+  const list = page.getByRole('list', { name: 'System check' })
+  await expect(list).toBeVisible({ timeout: 20_000 })
+  await expect(list.getByText('Pass')).toHaveCount(8)
+  await expect(list.getByText(/eval\) and writing raw HTML are both blocked/)).toBeVisible()
+  await expect(list.getByText(/PBKDF2-SHA256 with 600,000 iterations/)).toBeVisible()
+  await expectAccessible(page, 'system check')
+})

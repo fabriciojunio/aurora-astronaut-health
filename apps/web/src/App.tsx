@@ -25,7 +25,7 @@ export default function App({ dbName, iterations, fetcher = browserFetcher, lang
   return (
     <LanguageProvider initial={lang}>
       {vault ? (
-        <Mission vault={vault} fetcher={fetcher} onLock={lock} />
+        <Mission vault={vault} fetcher={fetcher} onLock={lock} kdfIterations={iterations} />
       ) : (
         <LockScreen onUnlock={setVault} dbName={dbName} iterations={iterations} />
       )}

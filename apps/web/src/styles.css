@@ -1093,3 +1093,66 @@ input[type='checkbox'] {
     animation: none !important;
   }
 }
+
+/* Mode, real use and system check */
+
+.mode-switch {
+  grid-column: 1 / -1;
+  display: flex;
+  margin-bottom: 0.4rem;
+}
+
+.mode-switch button {
+  padding: 0.45rem 1rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.mode-switch button + button {
+  border-left: 0;
+}
+
+.mode-switch button[aria-pressed='true'] {
+  color: var(--bg);
+  background: var(--text);
+  border-color: var(--text);
+}
+
+.live-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 0 2rem;
+  align-items: start;
+}
+
+.checks {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+}
+
+.checks li {
+  display: grid;
+  grid-template-columns: 6rem 14rem 1fr;
+  gap: 0.2rem 1rem;
+  align-items: baseline;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.checks li p {
+  margin: 0;
+  color: var(--muted);
+}
+
+@media (max-width: 860px) {
+  .live-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .checks li {
+    grid-template-columns: 1fr;
+  }
+}
