@@ -34,8 +34,27 @@ category, and every batch is signed and checked on arrival.
 
 ## Try it
 
-Live demo: **https://aurora-astronaut-health.vercel.app**. Create any 6 to 12 digit PIN (it stays on your device), then pick
-a scenario. **Fever in the crew medical officer** and **Solar storm on Mars** show the most.
+Live demo: **https://aurora-astronaut-health.vercel.app**. It runs in your browser, with no account; the PIN
+you create never leaves your device. EN | PT switches the language.
+
+### Five minutes, step by step
+
+1. **Create a PIN** (any 6 to 12 digits). Your records are encrypted with a key derived from it.
+2. **Simulation.** Pick *Fever in the crew medical officer*. The pattern check marks M. Okafor as unusual
+   and names the signals that moved; the alerts say why, what to do and cite their source.
+3. **Ask the assistant.** On one of those alerts, *Ask the assistant about this alert*, then *Why did I
+   get this alert?*. Try *Do I have an infection?*: it refuses to diagnose.
+4. **Real use.** Switch to *My mission*. Enter your own vital signs, or *Load 5 days of simulated
+   history* first so the model knows your normal, then save a reading with a temperature of 38.6 °C,
+   twice. The pattern check flags it; a third reading raises the temperature alert.
+5. **Radiation.** The May 2024 solar storm as NASA instruments measured it: the Moon on 14 May, Mars
+   on 20 May.
+6. **Vigilance test.** Three minutes, space bar or tap. Lapses of 355 ms or more are counted.
+7. **Privacy and sync.** Allow check-ins for the ground, send, then *Send and alter it in transit*:
+   the ground rejects the altered batch. *Verify the chain* checks the signed audit trail.
+8. **System check.** *Run the checks*: encryption, key derivation, data checksums, the model against
+   scikit-learn, the audit trail, signed batches, the browser's security policy and offline storage,
+   all tested live in your browser.
 
 ```bash
 cd apps/web
@@ -111,8 +130,8 @@ npm run test:e2e         # Chromium, against the production build and its real h
 
 | Suite | Count | Notes |
 |---|---|---|
-| Web unit and component | 290 | real WebCrypto and IndexedDB; 97% line coverage including the UI |
-| Web end to end | 8 | full mission day with WCAG 2.2 AA checks on every screen, offline use, CSP, tampered data |
+| Web unit and component | 318 | real WebCrypto and IndexedDB; 97% line coverage including the UI |
+| Web end to end | 11 | full mission day with WCAG 2.2 AA checks on every screen, offline use, CSP, tampered data |
 | Data pipeline | 40 | 99% coverage; checks the May 2024 storm in the snapshots |
 | Model | 9 | false alarms, recall, no data leaking between splits |
 

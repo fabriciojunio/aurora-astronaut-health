@@ -35,9 +35,31 @@ e cada lote é assinado e conferido na chegada.
 
 ## Como testar
 
-Demonstração online: **https://aurora-astronaut-health.vercel.app**. Crie qualquer PIN de 6 a 12 dígitos (ele fica
-só no seu dispositivo) e escolha um cenário. **Fever in the crew medical officer** e **Solar storm on
-Mars** são os que mais mostram.
+Demonstração online: **https://aurora-astronaut-health.vercel.app**. Roda no navegador, sem conta; o PIN
+que você cria nunca sai do seu dispositivo. O seletor EN | PT troca o idioma.
+
+### Cinco minutos, passo a passo
+
+1. **Crie um PIN** (6 a 12 dígitos). Os registros são cifrados com uma chave derivada dele.
+2. **Simulação.** Escolha *Febre no oficial médico da tripulação*. A verificação de padrão marca
+   M. Okafor como incomum e mostra os sinais que mudaram; os alertas dizem o porquê, o que fazer e
+   citam a fonte.
+3. **Pergunte ao assistente.** Num desses alertas, *Perguntar ao assistente sobre este alerta* e
+   depois *Por que recebi este alerta?*. Tente *Eu tenho uma infecção?*: ele se recusa a diagnosticar.
+4. **Uso real.** Troque para *Minha missão*. Digite os seus sinais vitais ou, antes, *Carregar 5 dias
+   de histórico simulado* para o modelo conhecer o seu normal; depois salve uma leitura com
+   temperatura de 38,6 °C, duas vezes. A verificação de padrão marca; uma terceira leitura dispara o
+   alerta de temperatura.
+5. **Radiação.** A tempestade solar de maio de 2024 como os instrumentos da NASA mediram: a Lua em
+   14 de maio, Marte em 20 de maio.
+6. **Teste de vigilância.** Três minutos, barra de espaço ou toque. Lapsos de 355 ms ou mais são
+   contados.
+7. **Privacidade e envio.** Autorize check-ins para a Terra, envie e depois *Enviar e alterar no
+   caminho*: a estação rejeita o lote alterado. *Verificar a cadeia* confere a trilha de auditoria
+   assinada.
+8. **Verificação do sistema.** *Rodar as verificações*: cifragem, derivação de chave, checksums dos
+   dados, o modelo contra o scikit-learn, a auditoria, os lotes assinados, a política de segurança
+   do navegador e o armazenamento offline, tudo testado ao vivo no seu navegador.
 
 ```bash
 cd apps/web
@@ -120,8 +142,8 @@ npm run test:e2e         # Chromium, contra o build de produção e seus cabeça
 
 | Conjunto | Quantidade | Observações |
 |---|---|---|
-| Web, unitários e de componentes | 290 | WebCrypto e IndexedDB reais; 97% de cobertura de linhas, incluindo a interface |
-| Web, ponta a ponta | 8 | dia completo de missão com checagem WCAG 2.2 AA em cada tela, uso offline, CSP, dados adulterados |
+| Web, unitários e de componentes | 318 | WebCrypto e IndexedDB reais; 97% de cobertura de linhas, incluindo a interface |
+| Web, ponta a ponta | 11 | dia completo de missão com checagem WCAG 2.2 AA em cada tela, uso offline, CSP, dados adulterados |
 | Pipeline de dados | 40 | 99% de cobertura; confere a tempestade de maio de 2024 nos instantâneos |
 | Modelo | 9 | falsos alarmes, detecção, nenhum vazamento de dados entre as divisões |
 
