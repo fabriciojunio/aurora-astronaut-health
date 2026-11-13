@@ -55,15 +55,18 @@ export async function loadSnapshots(vault: Vault, crewId: string): Promise<Vital
 }
 
 /**
- * Stores five days of simulated readings for the crew member's profile, ending yesterday, so the
- * pattern check has a personal normal to compare a new reading with. They stay labelled simulated.
+ * Stores five days of simulated readings for the crew member's profile, ending the day before
+ * yesterday, so the pattern check has a personal normal to compare a new reading with. They stay
+ * labelled simulated. The normal only counts readings older than 24 hours, so a history that ended
+ * yesterday lost its last day whenever the app was opened earlier in the day than yesterday's
+ * readings were taken, and the check kept saying one day was missing.
  */
 export async function seedBaseline(vault: Vault, crewId: string, now: Date = new Date()): Promise<number> {
   const profile = CREW.find((p) => p.id === crewId)
   if (!profile) throw new Error(`Unknown crew member: ${crewId}`)
   const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
   let stored = 0
-  for (let daysAgo = SEED_DAYS; daysAgo >= 1; daysAgo--) {
+  for (let daysAgo = SEED_DAYS + 1; daysAgo >= 2; daysAgo--) {
     const day = new Date(today - daysAgo * 86_400_000)
     const { vitals } = simulateDay(profile, day, {}, randomFor(crewId, daysAgo, SEED))
     const byTime = new Map<string, Partial<Record<VitalKind, number>>>()
