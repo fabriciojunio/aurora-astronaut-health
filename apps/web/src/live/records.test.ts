@@ -49,13 +49,13 @@ describe('live records', () => {
     expect(await loadSnapshots(vault, 'crew-2')).toHaveLength(1)
   })
 
-  it('seeds five labelled days that end yesterday', async () => {
+  it('seeds five labelled days that end the day before yesterday', async () => {
     const vault = await newVault()
     expect(await seedBaseline(vault, 'crew-1', NOW)).toBe(SEED_DAYS * 4)
     const snapshots = await loadSnapshots(vault, 'crew-1')
     expect(snapshots.every((s) => s.source === 'simulated')).toBe(true)
     expect(new Set(snapshots.map((s) => s.at.slice(0, 10)))).toEqual(
-      new Set(['2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12', '2026-11-13']),
+      new Set(['2026-11-08', '2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12']),
     )
     expect((await readAuditTrail(vault)).map((e) => e.action)).toEqual(['vitals.seeded'])
   })
@@ -87,6 +87,16 @@ describe('pattern check over live readings', () => {
     expect(two).toMatchObject({ status: 'assessed', anomalous: true, anomalousReadings: 2 })
     if (two.status !== 'assessed') return
     expect(two.result.drivers.map((d) => d.feature)).toContain('temperature')
+  })
+
+  it('judges right after the history is loaded, whatever the time of day', async () => {
+    for (const hour of ['00:30', '06:00', '12:00', '23:30']) {
+      const at = new Date(`2026-11-14T${hour}:00.000Z`)
+      const vault = await newVault()
+      await seedBaseline(vault, 'crew-1', at)
+      await saveSnapshot(vault, { crewId: 'crew-1', at: new Date(at.getTime() - 60_000).toISOString(), source: 'manual', values: USUAL })
+      expect(anomalyForReadings(model, await readings(vault), at)).toMatchObject({ status: 'assessed' })
+    }
   })
 
   it('ignores readings older than a day when judging today', async () => {
